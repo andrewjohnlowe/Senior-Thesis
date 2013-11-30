@@ -122,13 +122,27 @@ which allows us to use a gradient update step of
 for each matrix $\theta\in\{A, B, a, b\}$ and some small learning rate $\gamma$.
 
 \subsection{Stacking and Robust Knowledge}
-The basic Autoencoder performs well, but can be improved upon. It is desirable to have such an encoder-decoder pair to be resistant to inherent noise in the training data. Thus, in practice, we perturb the inputs to the Autoencoder, and attempt to have the reconstruction reproduce a original, un-noisy version from the perturbed observation. Formally, for any vector $\textbf{x}\in\R^k$ we present, let $\delta\mathbf{x}}\sim N(\mathbf{0}_k, \varepsilon^2 I)$, where $\mathbf{0}_k$ is the $k$ dimensional vector of zeros, and $\varepsilon$ is some adequately small scalar value. Now, our reconstructed input $\mathbf{x}$ will be 
+The basic Autoencoder performs well, but can be improved upon. It is desirable to have such an encoder-decoder pair to be resistant to inherent noise in the training data. Thus, in practice, we perturb the inputs to the Autoencoder, and attempt to have the reconstruction reproduce a original, un-noisy version from the perturbed observation. Formally, for any vector $\textbf{x}\in\R^k$ we present, let $\delta\mathbf{x}}\sim N(\mathbf{0}_k, \varepsilon^2 I)$, where $\mathbf{0}_k$ is the $k$ dimensional vector of zeros, and $\varepsilon$ is some adequately small scalar value. Now, our reconstructed vector of $\tilde{\mathbf{x}}$ of our input $\mathbf{x}$ will be 
 
 \begin{equation}
+\label{denoising}
 \tilde{\mathbf{x}} = B[s(A(\mathbf{x} + \delta\mathbf{x}) + \mathbf{a})] + \mathbf{b}
 \end{equation}
 
-In this case the gradient update steps in \ref{grads_of_auto} do not change. We still find the gradient with respect to the error when compared to the unperturbed observation. This process, though though not provable, creates a resistance to noise, making the features learned by the autoencoder more resistant to noise.
+In this case the gradient update steps in \ref{grads_of_auto} do not change. We still find the gradient with respect to the error when compared to the unperturbed observation. This process, though though not provable, creates a resistance to noise, making the features learned by the autoencoder more resistant to noise. Thus, we refer to equation \eqref{denoising} as a Denoising Autoencoder. As new, previously unseen examples are presented, we assume that they have noise associated with them, and are presented as-is --i.e., no perturbation -- to the encoder. In addition to creating more robust features, such a procedure makes the risk of overtraining much lower.
+
+Take any trained denoising autoencoder with parameters $(A,B,a,b)$ that maps vectors $\mathbf{x}\in\R^k$ to features $\mathbf{f}\in\R^p$, with $p<k$. Define the function
+
+\begin{equation}
+\label{featuremapping}
+\mathcal{F}_{(A,a)}^{k\rightarrow p}(\mathbf{x}) = s(A(\mathbf{x}) + \mathbf{a})
+\end{equation}
+
+which is syntactical sugar around the encoding step, which involves the encoding pair $(A,a)$. Suppose we wished to develop more abstract features. Using equation \eqref{featuremapping}, we can develop a collection of increasing \emph{abstract} autoencoders -- that is, autoencoders that develop progressively more abstract representations of the dataset. 
+
+
+
+
 
 
 
@@ -137,7 +151,7 @@ In this case the gradient update steps in \ref{grads_of_auto} do not change. We 
 
 \section{Deep Neural Network Architecture}
 
-Theoretically, there is no reason to have an upper limit on the size of a \nn{}. Adding additional layers plot  function {•}to \nn{}s broadens the classes of functions that are representable. However, in practice, we see a phenomenon called a \emph{vanishing gradient}. We (empirically) see that gradients in layers that are farther away from the target values tend towards zero \citep{trainingdifficulty}. This only becomes a problem when we consider how our network is initiated. Since we originally initiate all values in the network to some range $[-a,a]$, we run an increasing risk of any layer being trapped in a local minimum with smaller gradients. 
+Theoretically, there is no reason to have an upper limit on the size of a \nn{}. Adding additional layers to \nn{}s broadens the classes of functions that are representable. However, in practice, we see a phenomenon called a \emph{vanishing gradient}. We (empirically) see that gradients in layers that are farther away from the target values tend towards zero \citep{trainingdifficulty}. This only becomes a problem when we consider how our network is initiated. Since we originally initiate all values in the network to some range $[-a,a]$, we run an increasing risk of any layer being trapped in a local minimum with smaller gradients. 
 
 
 
