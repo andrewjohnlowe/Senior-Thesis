@@ -160,7 +160,7 @@ Formally, suppose we start from a dataset of dimension $p = d_0$, and we wish to
 \end{equation}
 
 
-We now have that for each layer $i$, $(A_i,B_i,a_i,b_i)$ is a Denoising Autoencoder. Equation \eqref{auto_soln} provides us with a formalization of greedy, layer-wise training presented in \citep{Vincent:2010fk}.
+We now have that for each layer $i$, $(A_i,B_i,a_i,b_i)$ is a Denoising Autoencoder. Equation \eqref{auto_soln} provides us with a formalization of greedy, layer-wise training presented in \citep{Vincent:2010fk}. We can greedily start from the first layer, and then train each following layer on the features extracted from the previous layer.
 
 
 
