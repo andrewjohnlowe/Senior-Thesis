@@ -105,7 +105,7 @@ where
 \rho(A,B,a,b) = \frac{1}{2}\sumn{i} \Vert \mathbf{x}_i -  (B [s(A\mathbf{x}_i + a)]+b) \Vert ^ 2
 \end{equation}
 
-By taking matrix derivatives, we then have that
+By taking matrix derivatives, we then have that, for a given observation $\mathbf{x}_i$,
 
 \begin{eqnarray}
 \label{grads_of_auto}
@@ -122,7 +122,7 @@ which allows us to use a gradient update step of
 for each matrix $\theta\in\{A, B, a, b\}$ and some small learning rate $\gamma$.
 
 \subsection{Stacking and Robust Knowledge}
-The basic Autoencoder performs well, but can be improved upon. It is desirable to have such an encoder-decoder pair to be resistant to inherent noise in the training data. Thus, in practice, we perturb the inputs to the Autoencoder, and attempt to have the reconstruction reproduce a original, un-noisy version from the perturbed observation. Formally, for any vector $\textbf{x}\in\R^k$ we present, let $\delta\mathbf{x}}\sim N(\mathbf{0}_k, \varepsilon^2 I)$, where $\mathbf{0}_k$ is the $k$ dimensional vector of zeros, and $\varepsilon$ is some adequately small scalar value. Now, our reconstructed vector of $\tilde{\mathbf{x}}$ of our input $\mathbf{x}$ will be 
+The basic Autoencoder performs well, but can be improved upon. It is desirable to have such an encoder-decoder pair to be resistant to inherent noise in the training data. Thus, in practice, we perturb the inputs to the Autoencoder, and attempt to have the reconstruction reproduce a original, un-noisy version from the perturbed observation. Formally, for any vector $\textbf{x}\in\R^{k}$ we present, let $\delta\mathbf{x}\sim N(\mathbf{0}_k, \varepsilon^2 I)$, where $\mathbf{0}_k$ is the $k$ dimensional vector of zeros, and $\varepsilon$ is some adequately small scalar value. Now, our reconstructed vector of $\tilde{\mathbf{x}}$ of our input $\mathbf{x}$ will be 
 
 \begin{equation}
 \label{denoising}
@@ -131,7 +131,7 @@ The basic Autoencoder performs well, but can be improved upon. It is desirable t
 
 In this case the gradient update steps in \ref{grads_of_auto} do not change. We still find the gradient with respect to the error when compared to the unperturbed observation. This process, though though not provable, creates a resistance to noise, making the features learned by the autoencoder more resistant to noise. Thus, we refer to equation \eqref{denoising} as a Denoising Autoencoder. As new, previously unseen examples are presented, we assume that they have noise associated with them, and are presented as-is --i.e., no perturbation -- to the encoder. In addition to creating more robust features, such a procedure makes the risk of overtraining much lower.
 
-Take any trained denoising autoencoder with parameters $(A,B,a,b)$ that maps vectors $\mathbf{x}\in\R^k$ to features $\mathbf{f}\in\R^p$, with $p<k$. Define the function
+Take any trained denoising autoencoder with parameters $(A,B,a,b)$ that maps vectors $\mathbf{x}\in\R^k$ to features $\mathbf{f}\in\R^{p}$, with $p<k$. Define the function
 
 \begin{equation}
 \label{featuremapping}
@@ -140,8 +140,27 @@ Take any trained denoising autoencoder with parameters $(A,B,a,b)$ that maps vec
 
 which is syntactical sugar around the encoding step, which involves the encoding pair $(A,a)$. Suppose we wished to develop more abstract features. Using equation \eqref{featuremapping}, we can develop a collection of increasing \emph{abstract} autoencoders -- that is, autoencoders that develop progressively more abstract representations of the dataset. 
 
+Formally, suppose we start from a dataset of dimension $p = d_0$, and we wish to map -- iteratively --  to each $\d_i\in\{d_i\}_{i=1}^{\ell}$, that is we map to $d_1$ dimensions, then to $d_2$ dimensions, et cetera. In addition, suppose we have a training set $\{\mathbf{x}_j\}_{j=1}^n$. For each $i\in\{1,\ldots,\ell\}$, let
 
 
+\begin{equation}
+\begin{aligned}
+\label{auto_soln}
+& (A_i,B_i,a_i,b_i) = \underset{(A,B,a,b)}{\text{argmin}}
+& & \frac{1}{2}\sumn{j} \Vert \mathbf{f}_j^{i-1} -  (B[s(A(\mathbf{f}_j^{i-1}+\delta\mathbf{f}_j^{i-1}) + a)]+b) \Vert ^ 2 \\
+& \text{subject to}
+& & A_i\in\R^{d_i\times d_{i-1}}, a_i\in\R^{d_{i-1}}, B_i\in\R^{d_{i-1}\times d_{i}}, a_i\in\R^{d_{i}} \\
+& \text{where}
+& & \mathbf{f}^{i}_j = 
+	\begin{cases} 
+		\mathcal{F}_{(A_{i},a_{i})}^{d_{i-1}\rightarrow d_i}(\mathbf{f}_j^{i-1}), & \mbox{if } i>0\\ 
+		\mathbf{x}_j, & \mbox{otherwise}
+	\end{cases}
+\end{aligned}
+\end{equation}
+
+
+We now have that for each layer $i$, $(A_i,B_i,a_i,b_i)$ is a Denoising Autoencoder. Equation \eqref{auto_soln} provides us with a formalization of greedy, layer-wise training presented in \citep{Vincent:2010fk}.
 
 
 
