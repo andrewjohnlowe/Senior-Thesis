@@ -1,0 +1,12 @@
+\chapter{Implementation and Performance of GAIA}
+\newthought{The standard algorithms} for $b$ and $c$-jet tagging in the High Energy Physics community are MV1 and JetFitterCombNN respectively -- two neural networks batch trained using a variety of \emph{upstream} information about the particle collisions. Using the same features -- some basic likelihoods, vertexing information, and other signatures -- we show a significant improvement over MV1 and JetFitterCombNN. In addition, we show (albeit qualitatively) that the pretrained features extracted via the Stacked Denoising Autoencoder cluster and show separation between bottom and light jets. First, we provide a brief description of the implementation of GAIA, then we discuss performance on the classification task.
+
+\section{Design and Implementation of GAIA}
+GAIA was implemented with speed, portability, modularity, and expandability in mind. In addition to development on the algorithms side, we integrate GAIA into the ROOT \citep{ROOT} Framework for High Energy Physics Data Analysis. Simulations and data within CERN are stored in a root structure called a \texttt{TTree}. We provide a simple wrapper around the native CERN I/O system to make training, testing, and validation easier, and more in line with the mathematical formulation.
+
+The GAIA framework was written in C++ using two standards for two seperate parts. The main interface was written using C++11 standard. Specifically, the \texttt{<utility>} and \texttt{<memory>} headers were used for R-Value references and smart pointer (\texttt{std::unique\_{}ptr}) functionality, the \texttt{<random>} header was used for random number generation, and range-based for-loops were used, as the compiler used (GCC 4.8.X) optimized all iteration using this structure when the \texttt{-O3} flag is passed. The header based library uses the C++0x standard to ensure compatibility with the existing CERN software.
+
+
+
+
+
