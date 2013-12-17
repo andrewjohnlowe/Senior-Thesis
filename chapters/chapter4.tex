@@ -75,11 +75,58 @@ D = \{ \log(p_\theta / p_\nu) : \nu \in \{u,b,c\}, \nu \neq \theta \}.
 \end{equation} 
 In our particular case, this leaves two discriminants for a three class problem. Note that we take a $\log(\cdot)$ here simply to make any even sampled cuts on this distribution more evenly sampled. 
 
-\subsection{Sensitivity to $p_T and \eta$}
+\subsection{Sensitivity to $p_T$ and $\eta$}
 
-O
+The usage of a classifier is relatively unique within physics. Since any classifier will have to probe and classify on datasets that are of different $p_T$ and $\eta$ ranges, care must be taken to ensure that a classifier isn't overfitting to a particular $(p_T,\eta)$ combination. Consider the following. Suppose we let a classifier learn the fact that low $p_T$ jets tend to be light jets
 
-Since any classifier will have to probe and classify on datasets that are of different 
+\subsection{Choosing What to Learn}
+
+Using \emph{online physics reweighting}, we can dictate what features our pretraining discovers. We can also dictate to what degree our \nn{} should balance out biases in distributions over the kinematic variables $p_T$ and $\eta$.
+
+\section{$b$-tagging}
+
+To measure performance
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/u_rej_ROC.pdf}
+\caption[The ATLAS detector]{$u$-rejection Receiver Operating Characteristic Curve of Tagging Lineup.
+\label{fig:urejROC}}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/c_rej_ROC.pdf}
+\caption[The ATLAS detector]{$c$-rejection Receiver Operating Characteristic Curve of Tagging Lineup.
+\label{fig:crejROC}}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/c_rej_mv1normalized_pTdep_60pct.pdf}
+\caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
+\label{fig:crejmv1norm60}}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/c_rej_mv1normalized_pTdep_70pct.pdf}
+\caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
+\label{fig:crejmv1norm60}}
+\end{figure}
+
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/u_rej_mv1normalized_pTdep_60pct.pdf}
+\caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
+\label{fig:urejmv1norm60}}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/u_rej_mv1normalized_pTdep_70pct.pdf}
+\caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
+\label{fig:urejmv1norm70}}
+\end{figure}
+
+
+
+
 
 
 
