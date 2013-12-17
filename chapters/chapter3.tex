@@ -228,8 +228,23 @@ Clearly, a deeper \nn{} makes for more potential to generalize to unseen example
 
 Searching the parameter space of deep neural networks is difficult and not well defined because the training criterion is non-convex and involves many local minima. This was very clearly elaborated upon in   \citep{Erhan:2009}, who showed that with hundreds of completely random initializations, gradient descent -- the standard backpropagation algorithm -- converged to a different local minimum each time, with solutions obtained from random initialization and purely supervised training consistently getting worse for architectures with more than 2 or 3 levels.
 
-We follow the example of \citep{Bengio:2007uq} and \citep{Vincent:2010fk}, who use the autoencoders outlined in Equation \eqref{auto_soln} to initialize the weights of the network before training using labelled examples. The intuition is as follows. The autoencoder training procedure is resistant to the vanishing gradient problem because...
+We follow the example of \citep{Bengio:2007uq} and \citep{Vincent:2010fk}, who use the autoencoders outlined in Equation \eqref{auto_soln} to initialize the weights of the network before training using labelled examples. The intuition is as follows. The autoencoder training procedure is resistant to the vanishing gradient problem because of a key insight from \citep{Hinton:2006vn}. Instead of training the model whole, we use a \emph{greedy} autoencoder training system similar to equation \eqref{auto_soln} -- proceeding layer by layer, and ensuring each layer forms a feature representation of the input.
 
+More formally, for an input $x$ and a target $t$, a series of Stacked Autoencoders learns the distribution of the input, i.e., $P(x)$. When we learn the distribution $P(x)$, since $P(t\vert x)$ is structurally similar to $P(x)$ \citep{Erhan:2010:WUP:1756006.1756025}, we are able to use this information to learn a better classifier. 
+
+Once we learn the more abstract features using the stacked, deep architecture, we can then use the target values to fine-tune \citep{Hinton:2006vn} all weights in the architecture to map to our target values. The process can be visualized using Figure \ref{fig:deeplearning}, which shows (in green) the denoising pre-training procedure, and the (in blue) fine-tuning procedure used to map the learned feature representation to the target values. Such a procedure in essence acts as a regularizer \citep{Bengio2009LearningDeep}, initializing weights in weight space while pushing towards local minima that represent $P(x)$ well.
+
+\section{Inverting the Problem}
+
+We now turn to the main algorithmic contribution of this thesis, Inverted Deep Network Encoding (IDNE).
+
+\begin{FPfigure} 
+\begin{center} 
+\includegraphics[width=1.2\textwidth]{figures/deeplearning.pdf}
+\caption[Short figure name.]{A visualization of the two step Deep Learning process using stacked, denoising autoencoders as feature learners. \label{fig:deeplearning}}
+\end{center}
+\end{FPfigure}
+\afterpage{\clearpage}
 
 
 
