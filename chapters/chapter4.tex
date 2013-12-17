@@ -75,6 +75,10 @@ D = \{ \log(p_\theta / p_\nu) : \nu \in \{u,b,c\}, \nu \neq \theta \}.
 \end{equation} 
 In our particular case, this leaves two discriminants for a three class problem. Note that we take a $\log(\cdot)$ here simply to make any even sampled cuts on this distribution more evenly sampled. 
 
+In the case of $b$-tagging, we refer to $\log(p_b/p_c)$ as the anti-$c$ discriminant, and we refer to $\log(p_b/p_u)$ as the anti-$u$ discriminant. In the case of $c$-tagging, we refer to $\log(p_c/p_b)$ as the anti-$bottom$ discriminant, and we refer to $\log(p_c/p_u)$ as the anti-$u$ discriminant. Note that for every pair of discriminants, we obtain a signal efficiency and two background rejections. We can use a \emph{Receiver Operating Characteristic} (ROC) curve to examine the relationship between efficiency and rejection. To form the ROC curve we essentially form a 2D histogram of the output logarithmic discriminants, and can use cumulative counts to determine efficiency and rejection for each flavor. 
+
+In the $c$-tagging case, we use a special plot called an iso-efficiency contour\footnote{Credit for the idea for this plot goes to Daniel H. Guest}, which shows the $c$-tagging efficiency as a surface over a plane of light rejection and bottom rejection. Such curves can be divided to show the ratio of efficiencies between $c$-taggers.
+
 \subsection{Sensitivity to $p_T$ and $\eta$}
 
 The usage of a classifier is relatively unique within physics. Since any classifier will have to probe and classify on datasets that are of different $p_T$ and $\eta$ ranges, care must be taken to ensure that a classifier isn't overfitting to a particular $(p_T,\eta)$ combination. Consider the following. Suppose we let a classifier learn the fact that low $p_T$ jets tend to be light jets and higher $p_T$ jets tend to be $b$-jets. Then, the model will call everything below a certain $p_T$ a light jet, maximizing overall accuracy. However we want our performance to be as even as possible across the $p_T$ and $\eta$ spectrum, as will be elaborated upon in Section \ref{sec:btag}, as the classifier must be able to perform well in different areas of the support.
@@ -83,60 +87,89 @@ The usage of a classifier is relatively unique within physics. Since any classif
 
 Using \emph{online physics reweighting}, we can dictate what features our pretraining discovers. We can also dictate to what degree our \nn{} should balance out biases in distributions over the kinematic variables $p_T$ and $\eta$. Using the reweighting outlined in Chapter 3, we reweight such that the distributions $f(p_T, \eta, c)=f(p_T, \eta, b)=f(p_T, \eta, u)$. We then show two things -- first, that the features learned by the stacked, denoising autoencoders show clustering based on flavor type, and second, that the reweighting scheme ensures that performance stays at reasonable levels across the $p_T$ spectrum. The latter of these two will be elaborated upon in Section \ref{sec:btag}.
 
-How can we visualize the features we learn through the unsupervised process? We look at samples unseen during the unsupervised learning procedure, and map them to the new feature space using the structure in the network. Consider
+How can we visualize the features we learn through the unsupervised, unlabelled process? We look at samples unseen during the unsupervised learning procedure, and map them to the new feature space using the structure in the network. 
 
-\begin{figure}
-\includegraphics[width=\textwidth]{figures/gaia.features}
-\caption[The ATLAS detector]{Feature space of the original dataset Learned by GAIA. Bottom Jets are red, Light Jets are blue, and Charm Jets are green.
-\label{fig:featGAIA}}
-\end{figure}
-
-\begin{figure}
+\begin{FPfigure}
+\includegraphics[width=\textwidth]{figures/gaia.features}\\
 \includegraphics[width=\textwidth]{figures/gaia.features.IDNE}
-\caption[The ATLAS detector]{Feature space of the original dataset Learned by GAIA with Inverted Deep Network Encoding. Bottom Jets are red, Light Jets are blue, and Charm Jets are green.
-\label{fig:featidne}}
+\caption[The ATLAS detector]{Feature space of the original dataset Learned by GAIA without (top) and with (bottom) Inverted Deep Network Encoding. Bottom Jets are red, Light Jets are blue, and Charm Jets are green.
+\label{fig:featGAIA}}
+\end{FPfigure}
+
+
+Consider Figure \ref{fig:featGAIA}, which shows the separation of flavor types in the case where we use IDNE (bottom) and where we do not (top). In both cases, we can clearly see that there is separation between light jets and bottom jets, albeit the features learned by GAIA with IDNE show an almost-linearly-separable class discriminator. However, we can see that the features learned by GAIA with IDNE show a separation for charm jets, which shows a greater ability to learn and denoise latent features present within the data. The idea of feature learning assumes that for every observed  $\mathbf{x}\in\R^D$, there is a vector $\mathbf{y}\in\R^d$, with $d<D$, along with a mapping $\varphi:\R^D\longrightarrow\R^d$ such that $f(\mathbf{y}) \approx \mathbf{x}$. In our case, we assume that a 3D feature space can generate all observed features we see within the detector. We see that in the case of IDNE, the features learned seem to be more aligned with type, which leads to the conclusion that the features are more explanatory, though this itself warrants a study.
+
+\subsection{A Learning Process}
+
+We now move away from feature learning and consider the discriminatory power and potential for GAIA within a physics analysis group. To measure the performance and potential of GAIA within a physics context, we compare the performance of GAIA on the two key identification tasks -- $c$-tagging and $b$-tagging -- to the current standards within the ATLAS, MV1 for $b$-tagging, JetFitterCharm for $c$-tagging, and JetFitterCombNN for general purpose tagging.
+
+The variables used to JetFitterCombNN are $p_T$, $\eta$, and the so-called JetFitter variables, a reconstruction algorithm that parses particle tracks out of energy deposits. JetFitterCombNN produces $p_b$, $p_u$, and $p_c$ posteriors from these inputs. The MV1 tagger uses the $p_b$, $p_u$, and $p_c$ outputs from JetFitterCombNN, and uses the IP3D and SV1 likelihoods as inputs, and produces one output -- $p_b$. JetFitterCharm uses the JetFitter variables with a tuning to better identify charm jets, and produces $p_b$, $p_u$, and $p_c$ posteriors. We train GAIA to use the IP3D and SV1 likelihoods, $p_T$ and $\eta$, the normal JetFitter variables, and the charm-tuned JetFitter variables while ignoring the posteriors from JetFitterCombNN that MV1 uses. The reason to avoid using the posteriors from JetFitterCombNN is simple -- we use it's input, and thus, we should be able to learn the relationship learned by JetFitterCombNN. In addition, each tagger must be calibrated, and interdependencies slows down production.  
+
+We now elaborate upon some semantics and details of the training benchmarking process. The tagger presented in this thesis is often referred to as simply GAIA, even though this is the name of the software framework. The structure of the GAIA tagger is as follows. We use 27 input variables, we have feature layers of size 30, 19, 11, and 5, and we map to 3 posteriors. We first map to a feature layer of 30 features to allow for redundancies in the learning of the input distribution. 
+
+We utilize a Monte Carlo sample for training and testing -- specifically, we use the \texttt{PowhegPythia} generator, and the \texttt{mc12\_8TeV.117050.PowhegPythia\_P2011C\_ttbar.skim\_p1562\_v0.130731164806} dataset. We use 25 million training jets, and 5 million validation jets, randomly partitioned. The plots shown here are generated for one particular training of GAIA, and is representative of overall performance. We train for  100 epochs for the following reason. Since we add noise to features in pretraining and in supervised training, we do not overfit. We can train for more than 100 epochs, but experience says that epochs beyond 100 do not contribute to performance.
+
+Some performance plots will show "GAIA B" and "GAIA C", which are simply different tunings of the reweighting. GAIA C is a more generic tagger and is weighted for $b$ and $c$ tagging -- that is, flavor dependent $p_T$ and $\eta$ distributions are forced to be the same. GAIA B is a tagger more specifically tuned for $b$-tagging, and for a search such as $H\longrightarrow bb$, which relies on being able to tag low $p_T$ $b$-jets. The weighting scheme in this instance doesn't force the distributions to be equal -- we let low $p_T$ light jets retain some imbalanced influence.
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figures/unweight_bottom_p_distro}
+\caption[The ATLAS detector]{$b$ posterior probability from GAIA by flavor.
+\label{fig:bpost}}
 \end{figure}
 
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figures/light_p_distro}
+\caption[The ATLAS detector]{$u$ posterior probability from GAIA by flavor.
+\label{fig:upost}}
+\end{figure}
+
+\begin{figure}[h]
+\includegraphics[width=\textwidth]{figures/charm_p_distro}
+\caption[The ATLAS detector]{$c$ posterior probability from GAIA by flavor
+\label{fig:cpost}}
+\end{figure}
 
 
 
 \section{$b$-tagging} 
 \label{sec:btag}
 
-To measure performance
+To determine the viability and potential performance improvements that GAIA offers over the current ATLAS line-up of taggers, we compare GAIA to all three benchmark taggers.
 
-\begin{figure}
+
+
+\begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/btag/u_rej_ROC.pdf}
 \caption[The ATLAS detector]{$u$-rejection Receiver Operating Characteristic Curve of Tagging Lineup.
 \label{fig:urejROC}}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/btag/c_rej_ROC.pdf}
 \caption[The ATLAS detector]{$c$-rejection Receiver Operating Characteristic Curve of Tagging Lineup.
 \label{fig:crejROC}}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/btag/c_rej_mv1normalized_pTdep_60pct.pdf}
 \caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
 \label{fig:crejmv1norm60}}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/btag/c_rej_mv1normalized_pTdep_70pct.pdf}
 \caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
 \label{fig:crejmv1norm60}}
 \end{figure}
 
 
-\begin{figure}
+\begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/btag/u_rej_mv1normalized_pTdep_60pct.pdf}
 \caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
 \label{fig:urejmv1norm60}}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/btag/u_rej_mv1normalized_pTdep_70pct.pdf}
 \caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
 \label{fig:urejmv1norm70}}
