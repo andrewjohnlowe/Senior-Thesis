@@ -77,13 +77,31 @@ In our particular case, this leaves two discriminants for a three class problem.
 
 \subsection{Sensitivity to $p_T$ and $\eta$}
 
-The usage of a classifier is relatively unique within physics. Since any classifier will have to probe and classify on datasets that are of different $p_T$ and $\eta$ ranges, care must be taken to ensure that a classifier isn't overfitting to a particular $(p_T,\eta)$ combination. Consider the following. Suppose we let a classifier learn the fact that low $p_T$ jets tend to be light jets and higher $p_T$ jets tend to be $b$-jets. 
+The usage of a classifier is relatively unique within physics. Since any classifier will have to probe and classify on datasets that are of different $p_T$ and $\eta$ ranges, care must be taken to ensure that a classifier isn't overfitting to a particular $(p_T,\eta)$ combination. Consider the following. Suppose we let a classifier learn the fact that low $p_T$ jets tend to be light jets and higher $p_T$ jets tend to be $b$-jets. Then, the model will call everything below a certain $p_T$ a light jet, maximizing overall accuracy. However we want our performance to be as even as possible across the $p_T$ and $\eta$ spectrum, as will be elaborated upon in Section \ref{sec:btag}, as the classifier must be able to perform well in different areas of the support.
 
 \subsection{Choosing What to Learn Revisited}
 
-Using \emph{online physics reweighting}, we can dictate what features our pretraining discovers. We can also dictate to what degree our \nn{} should balance out biases in distributions over the kinematic variables $p_T$ and $\eta$.
+Using \emph{online physics reweighting}, we can dictate what features our pretraining discovers. We can also dictate to what degree our \nn{} should balance out biases in distributions over the kinematic variables $p_T$ and $\eta$. Using the reweighting outlined in Chapter 3, we reweight such that the distributions $f(p_T, \eta, c)=f(p_T, \eta, b)=f(p_T, \eta, u)$. We then show two things -- first, that the features learned by the stacked, denoising autoencoders show clustering based on flavor type, and second, that the reweighting scheme ensures that performance stays at reasonable levels across the $p_T$ spectrum. The latter of these two will be elaborated upon in Section \ref{sec:btag}.
 
-\section{$b$-tagging}
+How can we visualize the features we learn through the unsupervised process? We look at samples unseen during the unsupervised learning procedure, and map them to the new feature space using the structure in the network. Consider
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/gaia.features}
+\caption[The ATLAS detector]{Feature space of the original dataset Learned by GAIA. Bottom Jets are red, Light Jets are blue, and Charm Jets are green.
+\label{fig:featGAIA}}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/gaia.features.IDNE}
+\caption[The ATLAS detector]{Feature space of the original dataset Learned by GAIA with Inverted Deep Network Encoding. Bottom Jets are red, Light Jets are blue, and Charm Jets are green.
+\label{fig:featidne}}
+\end{figure}
+
+
+
+
+\section{$b$-tagging} 
+\label{sec:btag}
 
 To measure performance
 

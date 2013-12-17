@@ -287,23 +287,7 @@ We do this process over each jet for a user-set partition on $p_T$ and $\eta$, o
 \end{eqnarray}
 for each $\upsilon\in(W_i, \mathbf{b}_i)\in C$ - the collection of weight matrices of our neural network. 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+In addition to this weighting of the gradient, In addition, with a probability $p$. we also add a small amount of noise to the input during supervised training to add robustness. This, when coupled with the reweighting of samples, lets the model learn a sample that is reweighted to have identical $p_T$ and $\eta$ distributions across flavors. The level to which the distributions are the same is controlled by the user set fineness of the partitions of $p_T$ and $\eta$.
 
 
 
