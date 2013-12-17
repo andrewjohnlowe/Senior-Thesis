@@ -58,15 +58,50 @@ As we can see, the interface is straight-forward, and additional functionality i
 
 \section{Measuring Performance}
 
+
 To benchmark the performance of GAIA with respect to the current selection of other particle classifiers,  we use some standard measures of classifier performance. We make these metrics very problem dependent for the sake of concreteness. We denote the quarks / jets that we try to identify as $\{b,c,u\}$ for Bottom, Charm, and Light jets respectively. These will be henceforth referred to as "flavors". For a given threshold -- called a "cut" within High Energy Physics -- on any number of output discriminants, define the efficiency of such a cut with respect to a certain flavor to be the number of jets of such a flavor that pass the discriminant out of the total number considered. We say that a jet or quark \emph{passes a cut} if its value of the discriminant is higher than the threshold or cut value.  Denote this efficiency quantity as $\epsilon_\theta$, for $\theta\in\{b,c,u\}$. This can be more succinctly formulated as
 \begin{equation}
 \epsilon_\theta = \frac{\text{\# of }\theta\text{ jets passing the cut in sample}}{\text{Total \# of }\theta\text{ jets in sample}}
 \end{equation}
- with respect to some cut on some combination of discriminants. To measure purity, we also consider the \emph{rejection} of a cut with respect to some flavor $\theta$, $r_\theta$, which is simply defined as the reciprocal of the efficiency. That is $r_\theta = \frac{1}{\epsilon_\theta}$.
+ with respect to some cut on some combination of discriminants. To measure purity, we also consider the \emph{rejection} of a cut with respect to some flavor $\theta$, $r_\theta$, which is simply defined as the reciprocal of the efficiency. That is $r_\theta = 1 / \epsilon_\theta$.
  
 For a particular type of identification problem -- that is, for $c$-tagging or $b$-tagging, we always consider the efficiency of the signal and the rejection of the two backgrounds. For any level of signal efficiency, it is always desirable to maximize the background rejection for both types of background. 
 
 For a physics analysis, we cannot simply take the Maximum A Posteriori (MAP) estimate of class membership, as different analysis groups need different levels of purity or yield, and some groups have a very different sample composition. For example, a group needing to identify $b$-jets against a background that is primarily $u$-jets is going to need a very different discriminant than an analysis group needing to separate $b$-jets from an even mix of $c$ and $u$-jets. 
+
+Consider our particular classifier, with outputs $p_u, p_b$, and $p_c$ representing the posterior probabilities that an observation is a light jet, bottom jet, or charm jet respectively. The posterior space has a distribution $f_{p_u,p_b,p_c}(p_u, p_b, p_c)$ over all outputs, and individual distributions for each $\theta$, $f_\theta(p_\theta)$. Suppose our signal is $\theta$. We then can construct a set of discriminants
+\begin{equation}
+D = \{ \log(p_\theta / p_\nu) : \nu \in \{u,b,c\}, \nu \neq \theta \}.
+\end{equation} 
+In our particular case, this leaves two discriminants for a three class problem. Note that we take a $\log(\cdot)$ here simply to make any even sampled cuts on this distribution more evenly sampled. 
+
+\subsection{Sensitivity to $p_T and \eta$}
+
+O
+
+Since any classifier will have to probe and classify on datasets that are of different 
+
+
+
+
+
+
+
+
+
+
+
+
+
+%For each flavor $\theta$, we assume that
+%\begin{equation}
+%\label{eq:findingcut}
+%\forall\omega\in [0,1], \exists \bar{p_\theta}\text{ such that }\int_0^{\bar{p_\theta}} f_\theta(x)dx = \omega.
+%\end{equation}
+%
+%Since $f_\theta$ is a probability distribution, for each $\omega$ we want, the $\bar{p_\theta}$ is unique. Thus, we can define a function 
+
+
 
 
 
