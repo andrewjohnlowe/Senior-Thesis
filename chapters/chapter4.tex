@@ -79,7 +79,7 @@ In our particular case, this leaves two discriminants for a three class problem.
 
 The usage of a classifier is relatively unique within physics. Since any classifier will have to probe and classify on datasets that are of different $p_T$ and $\eta$ ranges, care must be taken to ensure that a classifier isn't overfitting to a particular $(p_T,\eta)$ combination. Consider the following. Suppose we let a classifier learn the fact that low $p_T$ jets tend to be light jets and higher $p_T$ jets tend to be $b$-jets. 
 
-\subsection{Choosing What to Learn}
+\subsection{Choosing What to Learn Revisited}
 
 Using \emph{online physics reweighting}, we can dictate what features our pretraining discovers. We can also dictate to what degree our \nn{} should balance out biases in distributions over the kinematic variables $p_T$ and $\eta$.
 

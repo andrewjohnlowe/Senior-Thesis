@@ -116,12 +116,13 @@ for each $\theta\in(W_i, \mathbf{b}_i)\in C$, and for some small, user-determine
 In practice, it is well known that a simple gradient update is subject to noise and can suffer from the "ping pong" effect, moving around the local optimal solution without converging quickly. To ameliorate this problem, we utilize \emph{momentum}, which allows us to dampen sharp changes in gradient 
 updates. Intuitively, momentum uses a running weighted average of updates to ensure that the gradient update is more resistant to noise in clearly noisy nature of the cost function. 
 
-Formally, if we consider time steps $t$, we have that for a momentum parameter $\eta\in[0,1)$, our update rule becomes 
+Formally, if we consider time steps $t$, we have that for a momentum parameter $\mu\in[0,1)$, our update rule becomes 
 \begin{eqnarray}
-\Delta\theta_{t} &=& (\eta - 1)\gamma\Deriv{\Phi}{\theta_t} + \eta\Delta\theta_{t - 1}\\
+\label{eq:updaterule}
+\Delta\theta_{t} &=& (\mu - 1)\gamma\Deriv{\Phi}{\theta_t} + \mu\Delta\theta_{t - 1}\\
 \theta_{t+1} &=& \theta_t + \Delta\theta_{t},
 \end{eqnarray}
-Which dampens out fluctuations in changes to the gradient.
+for each $\theta\in(W_i, \mathbf{b}_i)\in C$ which dampens out fluctuations in changes to the gradient.
 
 
 
@@ -234,9 +235,6 @@ More formally, for an input $x$ and a target $t$, a series of Stacked Autoencode
 
 Once we learn the more abstract features using the stacked, deep architecture, we can then use the target values to fine-tune \citep{Hinton:2006vn} all weights in the architecture to map to our target values. The process can be visualized using Figure \ref{fig:deeplearning}, which shows (in green) the denoising pre-training procedure, and the (in blue) fine-tuning procedure used to map the learned feature representation to the target values. Such a procedure in essence acts as a regularizer \citep{Bengio2009LearningDeep}, initializing weights in weight space while pushing towards local minima that represent $P(x)$ well.
 
-\section{Inverting the Problem}
-
-We now turn to the main algorithmic contribution of this thesis, Inverted Deep Network Encoding (IDNE).
 
 \begin{FPfigure} 
 \begin{center} 
@@ -245,6 +243,58 @@ We now turn to the main algorithmic contribution of this thesis, Inverted Deep N
 \end{center}
 \end{FPfigure}
 \afterpage{\clearpage}
+
+\section{Inverting the Problem}
+
+We now turn to the main algorithmic contribution of this thesis, Inverted Deep Network Encoding (IDNE). Once again a sequential process, this idea builds on the notion of fine-tuning, and uses fine tuning to create a better feature representation of the dataset encoded within the deep architecture. 
+
+\section{Choosing What to Learn, or Learning what isn't there}
+
+Clearly, the features we learn through this pre-training procedure are very dependent upon the training sample. That is, proportions of different characteristics within the dataset will change what features are learned within the model. Normally, this is not a problem, as the labelled training data is most likely an accurate, representative sample of the data that a classifier will be predicting over. However, this is not the case with the application of deep learning architectures to particle identification -- in particular, bottom and charm jet tagging. The reason for this is simple twofold -- there is no way to label \emph{real} data, and we cannot fit to kinematics. 
+
+Data that is actually collected from the detector during a run cannot actually be labelled, so any classifier or predictive method must use \emph{Monte Carlo Generated Data}. Physicists understand the Standard Model of Particle Physics well enough to model particle collisions within the ATLAS detector to a very high degree of accuracy. Classifiers are thus trained on Monte Carlo data, which can clearly be labelled, and are then applied to "real" data from the detector. Normally, this is perfect for an algorithm -- seemingly unlimited training data. However, the Monte Carlo Generated data are not modeled perfectly, as there are some parameters in the Standard Model which are approximated under assumptions which may or may not be true. Thus, using \emph{denoising} autoencoders helps to reduce the dependence on the actual values presented to the network, and learns a less Monte Carlo dependent feature representation of the dataset.
+
+In addition to issues with Monte Carlo, we risk overfitting to specific $p_T$ and $\eta$ ranges of the jets we train over. Consider Figure \ref{fig:pT}. We can see that lower $p_T$ ranges are predominantly light jets, which means that any algorithm that tries to minimize error will call anything below a certain $p_T$ a light jet. This does maximize accuracy, as light jets will be the majority of most samples. However, as previously mentioned, we care about being able to identify particles across the $p_T$ spectrum. This begs the question -- is the discrepancy seen at the top of Figure \ref{fig:pT} caused by a disproportionate number of light jets in the entire sample? To answer this, consider the histogram at the bottom of Figure \ref{fig:pT}, which shows the weighted histograms -- i.e., histograms weighted so each flavor has an equal representation. Figure \ref{fig:eta} shows this same phenomenon for $\eta$ -- jets with a high $\vert\eta\vert$ tend to be light jets while jets with a lower $\vert\eta\vert$ tend to be bottom and charm jets. 
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/unweightedpTdistro.pdf}\\
+\includegraphics[width=\textwidth]{figures/weightedpTdistro.pdf}
+\caption[The ATLAS detector]{Unweighted (Top) and Weighted (Bottom) distributions of Jet $p_T$.
+\label{fig:pT}}
+\end{figure}
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/unweightedetadistro.pdf}\\
+\includegraphics[width=\textwidth]{figures/weightedetadistro.pdf}
+\caption[The ATLAS detector]{Unweighted (Top) and Weighted (Bottom) distributions of Jet $p_T$.
+\label{fig:eta}}
+\end{figure}
+
+
+How do we ameliorate this problem? We introduce \emph{online physics reweighting}, which serves to even our the influence of these distributions we see. In essence, we re-weight individual jets order to \emph{flatten} the $p_T$ and $\eta$ distributions across jet type. 
+
+We do the following. Let $f(p_T,\eta \vert \theta)$ be the distribution over $p_T$ and $\eta$ with respect to a certain flavor theta, where $$\sum_\theta \iint\limits_{\R^2}f(p_T,\eta | \theta) = 1.$$ To create a reweighting, we use partitions over the supports of $p_T$ and $\eta$. 
+
+Concretely suppose we want to re-weight a bottom jet that has $p_T$ between the partition values $m_1$ and $m_2$, and $\eta$ between the partition values $e_1$ and $e_2$. Then the weight of the jet with respect to a light majority -- $\omega_u(p_T, \eta, b)$ -- is 
+\begin{equation}
+\omega_u(p_T, \eta, b) = \frac{\int_{x = m_1}^{m_2}\int_{y = e_1}^{e_2} f(x,y,u)dydx}{\int_{x = m_1}^{m_2}\int_{y = e_1}^{e_2} f(x,y,b)dydx}.
+\end{equation}
+
+We do this process over each jet for a user-set partition on $p_T$ and $\eta$, obtaining a $\omega_u(p_T, \eta, \theta)$ for each jet. We define $\omega_u(p_T, \eta, u) = 1$, as we use light jets as our reference distribution. Since we use complete online learning during the optimization procedure, our update rule during optimization from Equation \eqref{eq:updaterule} now becomes -- for a jet of flavor $\theta$ with $p_T$ and $\eta$ -- 
+
+\begin{eqnarray}
+\Delta\upsilon_{t} &=& (\mu - 1)\gamma\omega_u(p_T, \eta, \theta)\Deriv{\Phi}{\upsilon_t}+ \mu\Delta\upsilon_{t - 1}\\
+\upsilon_{t+1} &=& \upsilon_t + \Delta\upsilon_{t},
+\end{eqnarray}
+for each $\upsilon\in(W_i, \mathbf{b}_i)\in C$ - the collection of weight matrices of our neural network. 
+
+
+
+
+
+
+
+
+
 
 
 
