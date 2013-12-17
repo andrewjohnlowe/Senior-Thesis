@@ -32,7 +32,7 @@ This thesis makes heavy use of Linear Algebra. As such, we introduce notation to
 
 In general, and unless otherwise noted, a capital letter, such as $A$, will represent a matrix, and $A^T$ will represent its transpose. A lower case letter, such as $a,b,c,x,y$, etc. will represent a scalar, with its un-italicized, bold-faced complements $\mathbf{a},\mathbf{b},\mathbf{c},\mathbf{x},\mathbf{y}$, etc. representing vectors. $A\mathbf{x}, AB, \mathbf{a}^T \mathbf{b}$, and $\mathbf{a} \mathbf{b}^T$ represent the standard matrix-vector, matrix-matrix, inner-product, and outer-product computations respectively.
 
-Let $A\odot B$ represent the standard element-wise Hadamard Product between two matrices (or vectors) of identical dimension. Suppose we have a function $\varphi : \R \longrightarrow \mathbb{R}$, and a matrix/vector $A$. Then we say that $\varphi(A)$ is defined, and is simply the function $\varphi$ applied element-wise to the matrix/vector $A$.
+Let $A\odot B$ represent the standard multiplication-based element-wise Hadamard Product between two matrices (or vectors) of identical dimension, and let $A\oslash B$ represent the equivalent operation for division, provided all entries in $B$ are non-zero. Suppose we have a function $\varphi : \R \longrightarrow \mathbb{R}$, and a matrix/vector $A$. Then we say that $\varphi(A)$ is defined, and is simply the function $\varphi$ applied element-wise to the matrix/vector $A$.
 
 Let $\mathbf{x}$ be some vector, and let $C=\{ (A_i,b_i) \}_{i=1}^{n}$ be some (clearly finite) collection of pairs of arbitrarily sized matrices and vectors. We ensure that the pairs satisfy
 
@@ -81,7 +81,9 @@ s(x) = \frac{1}{1+e^{-x}}
 
 which has limits of 0 and 1 at $-\infty$ and $\infty$ respectively. We also "overload" \eqref{sigmoid} by saying that given a matrix or vector $A$, $s(A)$ is defined and is simply an element-wise application of $s(\cdot)$.
 
-Let $s'(x)$ be the derivative of the sigmoid function. Conveniently, $s'(x) = s(x)(1 - s(x))$. We continue the abuse of overloading notation and say that for some matrix $A$, $s'(A) = s(A)\odot (1 - S(A))$.
+Let $s'(x)$ be the derivative of the sigmoid function. Conveniently, $s'(x) = s(x)(1 - s(x))$. We continue the abuse of overloading notation and say that for some matrix $A$, $s'(A) = s(A)\odot (1 - s(A))$.
+
+For a vector $\mathbf{a}\in\Rn$, let $\text{sum}(\mathbf{a}) = \sumn{i}a_i$, where each $a_i$ is the value of the vector in it's $i$th coordinate.
 
 
 %$$   B(A(\mathbf{x} + \delta\mathbf{x}) + \mathbf{a}) + \mathbf{b} = \mathbf{x}   $$

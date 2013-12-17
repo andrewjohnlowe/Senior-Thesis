@@ -9,9 +9,9 @@
 
 \section{Biological Inspiration}
 
-Trends in Neural Network formalism tend to coincide with changes in our understanding of how the brain works. An \ann can be formulated as clusters of neurons which fire via activation function
+Trends in Neural Network formalism tend to coincide with changes in our understanding of how the brain works. An \ann{} can be formulated as clusters of neurons which fire via activation functions to produce some desired representation of an input.
 
-In order to thoroughly understand the notion of \dl{} within an \ann{}, I give a linear algebraic formulation, along with a formal description of training.
+In order to thoroughly understand the notion of \dl{} within an \ann{}, I give a linear algebraic formulation, along with a formal description of the training procedure.
 
 \section{A General Neural Network}
 
@@ -48,15 +48,15 @@ which solves our problem of the best neural network given our observed $X$ and $
 
 \section{Pragmatism in forming a hypothesis}
 
-How do we choose an activation function, as specified in the conditions for the neural network in \ref{nn_conditions} on page \pageref{nn_conditions}?
+How do we choose an activation function, as specified in the conditions for the neural network in \ref{nn_conditions} on page \pageref{nn_conditions}? In practice, the standard sigmoid unit and hyperbolic unit are often use. In this implementation, we will use the standard sigmoidal unit.
 
-Clearly, the formalized prediction from the \nn{} \`{a} la \eqref{net_prediction} is a series of simple \texttt{AXPY} operations which can be easily optimized. Take our \nn{} $\mathcal{N}=\{ C, f, g \}$. From $$H(\mathbf{x} | \mathcal{N}) = g(\boxtimes_{C}^{f}(\mathbf{x}))$$, we can see the following. Suppose we have a \nn{} with $k$ layers. We will then have $k-1$ matrices and vectors in $C$. Label them $(W_i, b_i)$. We let $\mathbf{a}^{(1)} = \mathbf{x}$,  which allows us to say that 
+Clearly, the formalized prediction from the \nn{} \`{a} la \eqref{net_prediction} is a series of simple \texttt{AXPY} operations which can be easily optimized. Take our \nn{} $\mathcal{N}=\{ C, f, g \}$. From $$H(\mathbf{x} | \mathcal{N}) = g(\boxtimes_{C}^{f}(\mathbf{x}))$$, we can see the following. Suppose we have a \nn{} with $\ell$ layers. We will then have $\ell-1$ matrices and vectors in $C$. Label them $(W_i, b_i)$. We let $\mathbf{a}^{(1)} = \mathbf{x}$,  which allows us to say that 
 \begin{eqnarray}
-\mathbf{z}^{(i)} &=& W_i \mathbf{a}^{(i)} + b_i\\
+\mathbf{z}^{(i+1)} &=& W_i \mathbf{a}^{(i)} + b_i\\
 \mathbf{a}^{(i+1)} &=& 
 	\begin{cases} 
-		f(\mathbf{z}^{(i)}), & \mbox{if } i+1 \neq k \\ 
-		g(\mathbf{z}^{(i)}), & \mbox{otherwise}
+		f(\mathbf{z}^{(i+1)}), & \mbox{if } i+1 \neq \ell \\ 
+		g(\mathbf{z}^{(i+1)}), & \mbox{otherwise}
 	\end{cases}
 \end{eqnarray}
 
@@ -69,7 +69,60 @@ Training an \ann{} is done most frequently by so-called \emph{backpropagation}. 
 
 We can break backpropagation into two parts --  the \emph{feed-forward step} step and \emph{backpropagation of errors}. Essentially, we use the structure of the neural network to define a gradient of cost function associated with the prediction errors that the network produces. 
 
-More formally, suppose we have a collection of data points (column vectors) $\{\mathbf{x}_i\}_{i=1}^n$, where we have that $\mathbf{x}_i\in\Rn$. 
+More formally, suppose we have a collection of data points (column vectors) $\{\mathbf{x}_i\}_{i=1}^n$, where we have that $\mathbf{x}_i\in\R^k$. We can now define our objective function in a more concrete fashion than equation \eqref{prob_formulation}. We here consider the case of multi-class classification -- an instance in which the literature suggests the use of a $\log_2$ cross-entropy function. The derivation of gradients with respect to other error functions follows a similar form, and is omitted here for the sake of brevity. For an individual observation $\mathbf{x}\in\R^k$, a neural network $\mathcal{N}$, the predicted posteriors $\mathbf{p} = \smax(\boxtimes_{C}^{s}(\mathbf{x}))$, and a target vector of one-versus-all class encoding $\mathbf{t}\in\R^p$, we have an error of 
+\begin{equation}
+\Phi(\mathbf{x}, \mathbf{t}, \mathcal{N}) = -\text{sum}(\log_2(\mathbf{p}) \odot \mathbf{t}).
+\end{equation}
+
+To correct the errors our model produces with the posterior vector $\mathbf{p}$, we take a derivative of $\Phi$ with respect to $\mathbf{p}$. We have that 
+\begin{equation}
+\label{eq:ce_error}
+\frac{\partial\Phi}{\partial\mathbf{p}} = -\mathbf{t} \oslash \log(2)\mathbf{p}
+\end{equation}
+
+Notice above that only one element of $\mathbf{t}$, call it $t_i$, will be equal to one, and the rest will be zero, since we use one-versus-all class encoding. Now, notice that if the $p_i$ corresponding to $t_i$ is small, then that element of the gradient will blow up, correcting the mistake that the model made. 
+
+We proceed layer by layer. The prediction can be written as $\mathbf{p} = g(\mathbf{z}^{(\ell-1)})$. For the final layer $\ell$ of the network, define
+
+\begin{eqnarray}
+\label{eq:finallayer}
+\xi^{(\ell)} &=& -(\mathbf{t} \oslash \log(2)\mathbf{p}) \odot g'(\mathbf{z}^{(\ell-1)})\\
+ &=& - (\mathbf{t} \oslash \log(2) \mathbf{p}) \odot g(\mathbf{z}^{(\ell-1)}) \odot (\mathbf{1} - g(\mathbf{z}^{(\ell-1)}))\\
+ &=& -(\mathbf{t} \oslash \log(2)\mathbf{p}) \odot \mathbf{p} \odot (\mathbf{1} - \mathbf{p})\\
+ &=& -\frac{1}{\log(2)}(\mathbf{1} - \mathbf{p}).
+\end{eqnarray}
+
+We can the design a similar quantity for each layer below the output layer. Taking derivatives, we have that, for each $i< \ell$,
+
+\begin{equation}
+\label{update1}
+\xi^{(i)} = (W_i^T\xi^{(i+1)})\odot f\:'(\mathbf{z}^{(i)})
+\end{equation}
+
+Using these quantities, we can now find recursive definitions for derivatives with respect to our cost function. We have that 
+\begin{eqnarray}
+\label{eq:gradients}
+\frac{\partial\Phi}{\partial W_i} &=& \xi^{(i+1)}(\mathbf{a}^{(i)})^T\\
+\frac{\partial\Phi}{\partial \mathbf{b}^{(i)}} &=& \xi^{(i+1)}.
+\end{eqnarray}
+Notice that depending on whether or not we use a network for classification or regression, the only quantity that will change in this derivation is $\xi^{(\ell)}$ in equation \eqref{eq:finallayer}. Using equation \eqref{eq:gradients}, we can now write update rules for our optimization procedure. Note that for this derivation, we use pure online updates -- that is, we make adjustments to the gradient after each new labelled example. The basic update becomes then becomes
+\begin{equation}
+\theta \longleftarrow \theta - \gamma \Deriv{\Phi}{\theta},
+\end{equation}
+for each $\theta\in(W_i, \mathbf{b}_i)\in C$, and for some small, user-determined \emph{learning parameter} $\gamma$.
+
+\subsection{Gaining Momentum}
+
+In practice, it is well known that a simple gradient update is subject to noise and can suffer from the "ping pong" effect, moving around the local optimal solution without converging quickly. To ameliorate this problem, we utilize \emph{momentum}, which allows us to dampen sharp changes in gradient 
+updates. Intuitively, momentum uses a running weighted average of updates to ensure that the gradient update is more resistant to noise in clearly noisy nature of the cost function. 
+
+Formally, if we consider time steps $t$, we have that for a momentum parameter $\eta\in[0,1)$, our update rule becomes 
+\begin{eqnarray}
+\Delta\theta_{t} &=& (\eta - 1)\gamma\Deriv{\Phi}{\theta_t} + \eta\Delta\theta_{t - 1}\\
+\theta_{t+1} &=& \theta_t + \Delta\theta_{t},
+\end{eqnarray}
+Which dampens out fluctuations in changes to the gradient.
+
 
 
 \section{Extracting Features using \ann{}s}
@@ -165,14 +218,17 @@ We now have that for each layer $i$, $(A_i,B_i,a_i,b_i)$ is a Denoising Autoenco
 
 
 
-
-
-
 \section{Deep Neural Network Architecture}
 
-Theoretically, there is no reason to have an upper limit on the size of a \nn{}. Adding additional layers to \nn{}s broadens the classes of functions that are representable. However, in practice, we see a phenomenon called a \emph{vanishing gradient}. We (empirically) see that gradients in layers that are farther away from the target values tend towards zero \citep{trainingdifficulty}. This only becomes a problem when we consider how our network is initiated. Since we originally initiate all values in the network to some range $[-a,a]$, we run an increasing risk of any layer being trapped in a local minimum with smaller gradients. 
+Theoretically, there is no reason to have an upper limit on the size of a \nn{}. Adding additional layers to \nn{}s broadens the classes of functions that are representable. However, in practice, we see a phenomenon called a \emph{vanishing gradient}. We (empirically) see that gradients in layers that are farther away from the target values tend towards zero \citep{trainingdifficulty}. This only becomes a problem when we consider how our network is initiated. Since we originally initiate all values in the network to some range $[-a,a]$, we run an increasing risk of any layer being trapped in a local minimum with smaller gradients. Thus, for less abstract layers, the local minima we find are very dependent upon the initial placed on the weights. 
 
+\subsection{Uncovering Features}
 
+Clearly, a deeper \nn{} makes for more potential to generalize to unseen examples. However, such a complicated model makes for difficult tuning and adjustment of the weight matrices $W_i$. How can we help a complicated model learn such a deep representation of a system?
+
+Searching the parameter space of deep neural networks is difficult and not well defined because the training criterion is non-convex and involves many local minima. This was very clearly elaborated upon in   \citep{Erhan:2009}, who showed that with hundreds of completely random initializations, gradient descent -- the standard backpropagation algorithm -- converged to a different local minimum each time, with solutions obtained from random initialization and purely supervised training consistently getting worse for architectures with more than 2 or 3 levels.
+
+We follow the example of \citep{Bengio:2007uq} and \citep{Vincent:2010fk}, who use the autoencoders outlined in Equation \eqref{auto_soln} to initialize the weights of the network before training using labelled examples. The intuition is as follows. The autoencoder training procedure is resistant to the vanishing gradient problem because...
 
 
 
