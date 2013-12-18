@@ -52,6 +52,7 @@ How do we choose an activation function, as specified in the conditions for the 
 
 Clearly, the formalized prediction from the \nn{} \`{a} la \eqref{net_prediction} is a series of simple \texttt{AXPY} operations which can be easily optimized. Take our \nn{} $\mathcal{N}=\{ C, f, g \}$. From $$H(\mathbf{x} | \mathcal{N}) = g(\boxtimes_{C}^{f}(\mathbf{x}))$$, we can see the following. Suppose we have a \nn{} with $\ell$ layers. We will then have $\ell-1$ matrices and vectors in $C$. Label them $(W_i, b_i)$. We let $\mathbf{a}^{(1)} = \mathbf{x}$,  which allows us to say that 
 \begin{eqnarray}
+\label{feedforward}
 \mathbf{z}^{(i+1)} &=& W_i \mathbf{a}^{(i)} + b_i\\
 \mathbf{a}^{(i+1)} &=& 
 	\begin{cases} 
@@ -248,6 +249,65 @@ Once we learn the more abstract features using the stacked, deep architecture, w
 
 We now turn to the main algorithmic contribution of this thesis, Inverted Deep Network Encoding (IDNE). Once again a sequential process, this idea builds on the notion of fine-tuning, and uses fine tuning to create a better feature representation of the dataset encoded within the deep architecture. 
 
+We start by examining Equation \eqref{auto_soln}. Suppose we have a trained stacked denoising autoencoder  of $\ell$ layers that for a given input $\mathbf{x}$ produces $\mathbf{f}^\ell$, the most abstract feature representation. From Equation \eqref{auto_soln}, we have, for each $i\in\{1,\ldots,\ell\}$, a decoder pair $(B_i, \mathbf{b}_i)$ such that 
+\begin{equation}
+\label{eq:decoder}
+\mathbf{f}^{i-1} \approx B_i \mathbf{f}^{i} + \mathbf{b}_i.
+\end{equation}
+
+We can use this relationship to build our input from the most abstract learned feature representation in the stacked, denoising autoencoder. Using Equation \eqref{eq:decoder}, we have that the reconstructed input $\mathbf{x}$ from $\mathbf{f}^\ell$, $R(\mathbf{f}^\ell)$, is
+
+\begin{equation}
+\mathbf{x}\approx R( \mathbf{f}^{\ell})  = B_1 (B_2 (\cdots B_{\ell-1}(B_\ell \mathbf{f}^{\ell} + \mathbf{b}_\ell) + \mathbf{b}_{\ell - 1} \cdots ) + \mathbf{b}_2) + \mathbf{b}_1.
+\end{equation} 
+
+The key insight is that we now can use this information as an activation function for Inverted Deep Network Encoding. We can alter equation \eqref{feedforward} to predict the reconstructed input, i.e., we have that the prediction of the $\ell$ layered network is 
+\begin{eqnarray}
+\label{fd1}
+\mathbf{z}^{(i+1)} &=& A_{i+1} \mathbf{f}^{i} + \mathbf{a}_{i+1}\\
+\mathbf{f}^{i+1} &=& s(\mathbf{z}^{(i+1)}),
+\end{eqnarray}
+
+where $\mathbf{f}^0 = \mathbf{x}$. For IDNE, we add on one more layer -- that is, we make an $\ell + 1$ layer. We let the final "encoding" pair be $(A_{\ell+1}, \mathbf{a}_{\ell+1})$, with
+
+\begin{eqnarray}
+A_{\ell+1} &=& \prod_{i=1}^{\ell} B_i \\ 
+\mathbf{a}_{\ell+1} &=& R(\overrightarrow{0}),
+\end{eqnarray}
+
+where $\overrightarrow{0}$ is the zero vector. The final prediction of the network is then
+
+\begin{equation}
+\label{fd2}
+\tilde{\mathbf{x}} = A_{\ell +1}\mathbf{f}^\ell + \mathbf{a}_{\ell+1}.
+\end{equation}
+
+We can use backpropagation to tune the $(A_i, \mathbf{a}_i)$ pairs which become the $(W_i, \mathbf{b}_i)$ pairs to initialize in the network. To perform IDNE, we first must train stacked, denoising autoencoders, and then we use Equations \eqref{fd1}, \eqref{fd2}, and \eqref{backproprule} to write the update rules for the $(A_i, \mathbf{a}_i)$ pairs. We minimize a cost that is a sum of squares, i.e., $\Phi = \frac{1}{2}\Vert \mathbf{x} - \tilde{\mathbf{x}} \Vert ^2 $.
+
+For the last layer, define
+\begin{equation}
+\label{eq:finallayer}
+\xi^{(\ell+1)} = -(\mathbf{x} - \tilde{\mathbf{x}})
+\end{equation}
+
+We can the design a similar quantity for each layer below the output layer. Taking derivatives, we have that, for each $i\leq \ell$,
+
+\begin{equation}
+\label{update1}
+\xi^{(i)} = (A_i^T\xi^{(i+1)})\odot s\:'(\mathbf{z}^{(i)})
+\end{equation}
+
+Using these quantities, we can now find recursive definitions for derivatives with respect to our cost function. We have that 
+\begin{eqnarray}
+\label{eq:newgradients}
+\frac{\partial\Phi}{\partial A_i} &=& \xi^{(i+1)}(\mathbf{f}^{i})^T\\
+\frac{\partial\Phi}{\partial \mathbf{a}_i} &=& \xi^{(i+1)}.
+\end{eqnarray}
+
+
+Simply put, IDNE is a fine-tuning procedure with respect to the inputs. Using equation \eqref{eq:newgradients}, we can update the weights of the neural network to more accurately reconstruct the input. The user can define how much they want the final decoding layer to change over the course of optimization, allowing there to be rigidity in the decoding matrix. The level to which the use wants the final decoder to change is specified by the learning parameter. 
+
+
 \section{Choosing What to Learn, or Learning what isn't there}
 
 Clearly, the features we learn through this pre-training procedure are very dependent upon the training sample. That is, proportions of different characteristics within the dataset will change what features are learned within the model. Normally, this is not a problem, as the labelled training data is most likely an accurate, representative sample of the data that a classifier will be predicting over. However, this is not the case with the application of deep learning architectures to particle identification -- in particular, bottom and charm jet tagging. The reason for this is simple twofold -- there is no way to label \emph{real} data, and we cannot fit to kinematics. 
@@ -256,18 +316,18 @@ Data that is actually collected from the detector during a run cannot actually b
 
 In addition to issues with Monte Carlo, we risk overfitting to specific $p_T$ and $\eta$ ranges of the jets we train over. Consider Figure \ref{fig:pT}. We can see that lower $p_T$ ranges are predominantly light jets, which means that any algorithm that tries to minimize error will call anything below a certain $p_T$ a light jet. This does maximize accuracy, as light jets will be the majority of most samples. However, as previously mentioned, we care about being able to identify particles across the $p_T$ spectrum. This begs the question -- is the discrepancy seen at the top of Figure \ref{fig:pT} caused by a disproportionate number of light jets in the entire sample? To answer this, consider the histogram at the bottom of Figure \ref{fig:pT}, which shows the weighted histograms -- i.e., histograms weighted so each flavor has an equal representation. Figure \ref{fig:eta} shows this same phenomenon for $\eta$ -- jets with a high $\vert\eta\vert$ tend to be light jets while jets with a lower $\vert\eta\vert$ tend to be bottom and charm jets. 
 
-\begin{figure}
+\begin{FPfigure}
 \includegraphics[width=\textwidth]{figures/unweightedpTdistro.pdf}\\
 \includegraphics[width=\textwidth]{figures/weightedpTdistro.pdf}
 \caption[The ATLAS detector]{Unweighted (Top) and Weighted (Bottom) distributions of Jet $p_T$.
 \label{fig:pT}}
-\end{figure}
-\begin{figure}
+\end{FPfigure}
+\begin{FPfigure}
 \includegraphics[width=\textwidth]{figures/unweightedetadistro.pdf}\\
 \includegraphics[width=\textwidth]{figures/weightedetadistro.pdf}
 \caption[The ATLAS detector]{Unweighted (Top) and Weighted (Bottom) distributions of Jet $p_T$.
 \label{fig:eta}}
-\end{figure}
+\end{FPfigure}
 
 
 How do we ameliorate this problem? We introduce \emph{online physics reweighting}, which serves to even our the influence of these distributions we see. In essence, we re-weight individual jets order to \emph{flatten} the $p_T$ and $\eta$ distributions across jet type. 

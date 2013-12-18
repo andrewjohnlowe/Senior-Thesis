@@ -83,7 +83,7 @@ In the $c$-tagging case, we use a special plot called an iso-efficiency contour\
 
 The usage of a classifier is relatively unique within physics. Since any classifier will have to probe and classify on datasets that are of different $p_T$ and $\eta$ ranges, care must be taken to ensure that a classifier isn't overfitting to a particular $(p_T,\eta)$ combination. Consider the following. Suppose we let a classifier learn the fact that low $p_T$ jets tend to be light jets and higher $p_T$ jets tend to be $b$-jets. Then, the model will call everything below a certain $p_T$ a light jet, maximizing overall accuracy. However we want our performance to be as even as possible across the $p_T$ and $\eta$ spectrum, as will be elaborated upon in Section \ref{sec:btag}, as the classifier must be able to perform well in different areas of the support.
 
-\subsection{Choosing What to Learn Revisited}
+\subsection{Choosing What to Learn, Revisited}
 
 Using \emph{online physics reweighting}, we can dictate what features our pretraining discovers. We can also dictate to what degree our \nn{} should balance out biases in distributions over the kinematic variables $p_T$ and $\eta$. Using the reweighting outlined in Chapter 3, we reweight such that the distributions $f(p_T, \eta, c)=f(p_T, \eta, b)=f(p_T, \eta, u)$. We then show two things -- first, that the features learned by the stacked, denoising autoencoders show clustering based on flavor type, and second, that the reweighting scheme ensures that performance stays at reasonable levels across the $p_T$ spectrum. The latter of these two will be elaborated upon in Section \ref{sec:btag}.
 
@@ -109,7 +109,11 @@ We now elaborate upon some semantics and details of the training benchmarking pr
 
 We utilize a Monte Carlo sample for training and testing -- specifically, we use the \texttt{PowhegPythia} generator, and the \texttt{mc12\_8TeV.117050.PowhegPythia\_P2011C\_ttbar.skim\_p1562\_v0.130731164806} dataset. We use 25 million training jets, and 5 million validation jets, randomly partitioned. The plots shown here are generated for one particular training of GAIA, and is representative of overall performance. We train for  100 epochs for the following reason. Since we add noise to features in pretraining and in supervised training, we do not overfit. We can train for more than 100 epochs, but experience says that epochs beyond 100 do not contribute to performance.
 
-Some performance plots will show "GAIA B" and "GAIA C", which are simply different tunings of the reweighting. GAIA C is a more generic tagger and is weighted for $b$ and $c$ tagging -- that is, flavor dependent $p_T$ and $\eta$ distributions are forced to be the same. GAIA B is a tagger more specifically tuned for $b$-tagging, and for a search such as $H\longrightarrow bb$, which relies on being able to tag low $p_T$ $b$-jets. The weighting scheme in this instance doesn't force the distributions to be equal -- we let low $p_T$ light jets retain some imbalanced influence.
+Some performance plots will show "GAIA B" and "GAIA C", which are simply different tunings of the reweighting. GAIA C is a more generic tagger and is weighted for $b$ and $c$ tagging -- that is, flavor dependent $p_T$ and $\eta$ distributions are forced to be the same. GAIA B is a tagger more specifically tuned for $b$-tagging, and for a search such as $H\longrightarrow bb$, which relies on being able to tag low $p_T$ $b$-jets. The weighting scheme in this instance doesn't force the distributions to be equal -- we let low $p_T$ light jets retain some imbalanced influence. Also note that GAIA with IDNE is not included in most plots, as it new has not been tested enough to be included in the next ATLAS data reprocessing. There will be a short section at the end that shows some preliminary, promising results using GAIA with IDNE, and we withold a complete exposition until further testing. 
+
+To get a sense of class-based separation over the posterior probabilities learned by GAIA, consider Figures \ref{fig:bpost}, \ref{fig:upost}, and \ref{fig:cpost}, which show the log count histograms of the posterior probabilities of each flavor, with color overlay indicating true flavor membership of the jet. As is evident in Figure \ref{fig:bpost}, the value $p_b$ seems to hold a lot of discriminatory power, especially for high values of the discriminant. This means that for lower efficiencies, the rejection values we obtain should yield a pure passing sample. In Figure \ref{fig:upost}, we see the $u$ posterior probability colored by true flavor. This posterior also holds a significant amount of information. In addition, it seems as though the $p_u$ posterior seems to hold equal discriminatory power over $b$ and $c$ jets. In Figure \ref{fig:cpost}, we see the $c$ jet posteriors colored by true flavor. Here we can see first hand the difficulty associated with $c$-tagging. Though we clearly have some discriminatory power, it seems as though on its own, $p_c$ will not produce results of merit by itself, necessitating the use of the aforementioned log ratios of posterior probabilities. 
+
+
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/unweight_bottom_p_distro}
@@ -134,15 +138,21 @@ Some performance plots will show "GAIA B" and "GAIA C", which are simply differe
 \section{$b$-tagging} 
 \label{sec:btag}
 
-To determine the viability and potential performance improvements that GAIA offers over the current ATLAS line-up of taggers, we compare GAIA to all three benchmark taggers.
+\newcommand{\roc}{Receiver Operating Characteristic }
+\newcommand{\er}{$\varepsilon$-r }
 
+To determine the viability and potential performance improvements that GAIA offers over the current ATLAS line-up of taggers, we compare GAIA to all three benchmark taggers. In particular, we first construct \roc curves for each tagger. For MV1, there is a single discriminant, so our \roc will simply be a line running through \er space\footnote{Efficiency-Rejection}. However, for each of the other taggers, we have two discriminants on which we make cuts. Thus, we end up with a non-line subset of \er space. To make comparison easier, for each efficiency, we take the maximum of all possible rejection values, knowing that the other values of the rejection represent a tradeoff between the different types of background rejection.
 
-
+\subsection{Whole Sample Performance}
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/btag/u_rej_ROC.pdf}
 \caption[The ATLAS detector]{$u$-rejection Receiver Operating Characteristic Curve of Tagging Lineup.
 \label{fig:urejROC}}
 \end{figure}
+
+Figure \ref{fig:urejROC} shows the light jet rejection \roc of each algorithm, and we see that both GAIA B and GAIA C have a higher rejection value for each efficiency of interest \footnote{We only care about $\varepsilon>0.5$ for physics related reasons.}, indicating that GAIA can offer better light rejection across all values of $\varepsilon$. Notice that this convex hull of possibilities for taggers that use three posteriors represents a cut only on $\log(p_b/p_u)$.
+
+Next, consider the rejection of the other background for $b$-jet identification -- charm jets. Figure \ref{fig:crejROC} shows the convex hull of possibilities in \er space for charm rejection, Notice that in this instance, the only discriminant used for JetFitterCharm, JetFitterCombNN, and GAIA B and C is $\log(p_b/p_c)$.
 
 \begin{figure}[h]
 \includegraphics[width=\textwidth]{figures/btag/c_rej_ROC.pdf}
@@ -150,33 +160,89 @@ To determine the viability and potential performance improvements that GAIA offe
 \label{fig:crejROC}}
 \end{figure}
 
-\begin{figure}[h]
-\includegraphics[width=\textwidth]{figures/btag/c_rej_mv1normalized_pTdep_60pct.pdf}
-\caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
-\label{fig:crejmv1norm60}}
+\newcommand{\pt}{$p_T$ }
+\subsection{Concerning \pt}
+
+
+As previously stated, we concern ourselves with $p_T$ dependent performance of a tagger. That is, consider a fixed global cut on a discriminant that we have determined to yield an $\varepsilon_b$ of 0.60. If we look at specific $p_T$ ranges, how does that global performance map to the specified range? It is desirable to have a tagger exhibit flat performance across $p_T$ ranges, as this ensures that the tagger can operate in different mass and $p_T$ ranges required by different analyses. To quantify this, we take a global cut that we determine to produce a specified $\varepsilon$ over the entire sample. Then, we look at specific bins\footnote{\`{A} la a histogram} of $p_T$, and determine how that cut on discriminant performs in that particular bin. We can quantify signal efficiency in that bin, and we can also look at both types of background rejection, and see if we see a desirable relationship between $p_T$ and performance related measures. It should be noted that in all \pt dependence plots, a cut is only made on $\log(p_b/p_c)$ for simplicity.
+
+
+In Figure \ref{fig:urej_fixed} we see the \pt range dependence of bottom rejection at an $\varepsilon_b =  0.70$, and 0.80 level. Clearly, GAIA B outperforms MV1 and JetFitterCombNN in each \pt bin. However, the increase in performance comes at a cost -- the \pt dependence is not flat. We can see that GAIA C shows flat performance across the \pt spectrum, sacrificing performance in lower \pt bins for flatness across the spectrum. Plots showing \pt dependence of $c$-rejection and efficiency for each operating point $\varepsilon_b = \{0.70, 0.80\}$ are included in the Appendix for the sake of brevity. 
+
+
+\begin{FPfigure}
+\includegraphics[width=\textwidth]{figures/btag/urej_fixedOP_70}\\
+\includegraphics[width=\textwidth]{figures/btag/urej_fixedOP_80}
+\caption[perf_plot]{$u$ rejection as a function of jet $p_T$, fixed efficiency cut at $\varepsilon_b = \{0.70, 0.80\}$.
+\label{fig:urej_fixed}}
+\end{FPfigure}
+
+How do we get the \pt dependent dynamics we see in Figure \ref{fig:urej_fixed}? Consider the case where we fix $\varepsilon_b = 0.70$. We must examine the $\varepsilon_b$-\pt dependence in order to shed light on where this dynamic comes from.
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/beff_fixedOP_70}
+\caption[perf_plot]{$b$ efficiency as a function of jet $p_T$, fixed efficiency cut at $\varepsilon = 0.70$.
+\label{fig:beff_fixedOP_70}}
 \end{figure}
 
-\begin{figure}[h]
-\includegraphics[width=\textwidth]{figures/btag/c_rej_mv1normalized_pTdep_70pct.pdf}
-\caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
-\label{fig:crejmv1norm60}}
-\end{figure}
+Figure \ref{fig:beff_fixedOP_70} shows the \pt dependence of efficiency. Cross referencing between the top of Figure \ref{fig:urej_fixed} and Figure \ref{fig:beff_fixedOP_70} we can see that in each \pt bin, there seems to be a relationship between in-bin efficiency and the rejection we see, which makes sense -- rejection and efficiency are inversely correlated. 
 
-
-\begin{figure}[h]
-\includegraphics[width=\textwidth]{figures/btag/u_rej_mv1normalized_pTdep_60pct.pdf}
-\caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
-\label{fig:urejmv1norm60}}
-\end{figure}
-
-\begin{figure}[h]
+To examine this relationship, we perform a normalization procedure as follows. First, make a fixed output cut on MV1, and examine each \pt bin to determine in-bin signal efficiency. Then for each other tagger and for each \pt bin, we determine a cut on that taggers output spectrum  that achieves the same in-bin signal efficiency as MV1. This procedure is a better indicator of how an algorithm performs, as it is less sample dependent. As we can see in Figure \ref{fig:urejmv1norm70}, 
+\begin{figure}
 \includegraphics[width=\textwidth]{figures/btag/u_rej_mv1normalized_pTdep_70pct.pdf}
 \caption[The ATLAS detector]{MV1 Normalized Performance of GAIA.
 \label{fig:urejmv1norm70}}
 \end{figure}
+the rejection performance of GAIA B and GAIA C are nearly identical and are certainly within statistical uncertainties. Interestingly enough, both versions of GAIA are clearly above MV1 for the entire $p_T$ spectrum, indicating superior performance for every \pt range of interest. 
+
+\subsection{Using IDNE}
+
+
+Using the Inverted Deep Network Encoding outlined in Chapter 3, we show performance improvements over GAIA B and GAIA C. As was evident in Figure \ref{fig:featGAIA}, GAIA with IDNE learned very informative features with respect to the structure of our dataset. This feature is not tested, and a thorough analysis of performance on a variety of problems is left as a future study. 
+
+In Figure \ref{fig:urejROCIDNE}, 
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/u_rej_ROC_IDNE.pdf}
+\caption[The ATLAS detector]{$u$-rejection Receiver Operating Characteristic Curve of Tagging Lineup.
+\label{fig:urejROCIDNE}}
+\end{figure}
+
+we can clearly see that GAIA with IDNE is tentatively able to classify better than all other versions of GAIA, indicating a promising development. Figure \ref{fig:crejROCIDN} 
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btag/c_rej_ROC_IDNE.pdf}
+\caption[The ATLAS detector]{$c$-rejection Receiver Operating Characteristic Curve of Tagging Lineup.
+\label{fig:crejROCIDNE}}
+\end{figure}
+affirms this performance increase, showing that both $u$ rejection and $c$ rejection for the $b$ tagging problem are improved when using the IDNE method of developing more informative features. 
 
 
 
+
+
+
+
+\section{$c$-tagging}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btagging/phase_gaia_b_versus_jfcharm.pdf}
+\caption[The ATLAS detector]{Iso-$\varepsilon$ plot of GAIA B versus JetFitterCharm.
+\label{fig:gbjfcphase}}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btagging/phase_gaia_c_versus_jfcharm.pdf}
+\caption[The ATLAS detector]{Iso-$\varepsilon$ plot of GAIA C versus JetFitterCharm.
+\label{fig:gcjfcphase}}
+\end{figure}
+
+Text here
+\begin{figure}
+\includegraphics[width=\textwidth]{figures/btagging/phase_gaia_b_versus_gaia_c.pdf}
+\caption[The ATLAS detector]{Iso-$\varepsilon$ plot of GAIA B versus GAIA C.
+\label{fig:gbgcphase}}
+\end{figure}
 
 
 
