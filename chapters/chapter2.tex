@@ -32,12 +32,14 @@
 
 \subsection{Trigger}
 
-The trigger is split into the LV1 and LV2 triggers. The LV1 trigger uses basic hardware-level logic to decide on regions of interest within the detector, and keep only data that reaches said regions. It requires about 2 micro-seconds to reach its keep-or-throw decision, including the delays due to cables between the detector and the underground room where the trigger logic is housed. The LV2 trigger uses information from all levels of the detector, using a finer granularity when deciding what to keep and what to ignore. At this level, a decision about an event is made within 10ms.
+The trigger is split into the LVL1 and LVL2 triggers. The LVL1 trigger uses basic hardware-level logic to decide on regions of interest within the detector, and keep only data that reaches said regions. It requires about 2 micro-seconds to reach its keep-or-throw decision, including the delays due to cables between the detector and the underground room where the trigger logic is housed. The LVL2 trigger uses information from all levels of the detector, using a finer granularity when deciding what to keep and what to ignore. At this level, a decision about an event is made within 10ms.
 
 \subsection{Reconstruction}
 
-Using fairly simple algorithms and physical formulae, particle momenta, direction, and dynamics can be reconstructed out of the interactions within the detector. In the case of $b$ and $c$ tagging, ...
+Using fairly simple algorithms and physical formulae, particle momenta, direction, and dynamics can be reconstructed out of the interactions within the detector. In the case of $b$ and $c$ tagging, we are able to obtain meaningful nature and hand-crafted features that carry information about tracks, vertexing, and energy information, among other things. A full discussion of jet reconstruction is beyond the scope of this thesis -- what is important is that these quantities can help us build a classifier that recognizes latent patterns that drive the dynamics we observe in the detector apparatus.
 
+\subsection{ROOT}
 
+All physics objects used within an analysis are stored in formats defined in the ROOT \citep{ROOT} C++ framework. The data we work with in this thesis is stored in a so-called D3PD, which are stored in structures called a \texttt{TTree}. Intuitively, a D3PD is a standard table, where each row can have entries which are arbitrarily sized C++ Standard Library objects. The data we use is stored in such structures, and as will be elaborated upon later in this thesis, we provide a C++ wrapper around the D3PD and \texttt{TTree} interface.
 
 

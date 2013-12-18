@@ -9,9 +9,9 @@
 
 \section{Biological Inspiration}
 
-Trends in Neural Network formalism tend to coincide with changes in our understanding of how the brain works. An \ann{} can be formulated as clusters of neurons which fire via activation functions to produce some desired representation of an input.
+Trends in Neural Network formalism tend to coincide with changes in our understanding of how the brain works. An \ann{} can be formulated as clusters of neurons which fire via activation functions to produce some desired representation of an input. Deep Learning takes this notion one step further, and attempts to mathematically mimic the natural generalization ability of the brain by simulating the learning of abstract, representative features.
 
-In order to thoroughly understand the notion of \dl{} within an \ann{}, I give a linear algebraic formulation, along with a formal description of the training procedure.
+In order to thoroughly understand the notion of \dl{} within an \ann{}, I give a linear algebraic formulation of a basic neural network, along with a formal description of the training procedure.
 
 \section{A General Neural Network}
 
@@ -90,7 +90,7 @@ We proceed layer by layer. The prediction can be written as $\mathbf{p} = g(\mat
 \xi^{(\ell)} &=& -(\mathbf{t} \oslash \log(2)\mathbf{p}) \odot g'(\mathbf{z}^{(\ell-1)})\\
  &=& - (\mathbf{t} \oslash \log(2) \mathbf{p}) \odot g(\mathbf{z}^{(\ell-1)}) \odot (\mathbf{1} - g(\mathbf{z}^{(\ell-1)}))\\
  &=& -(\mathbf{t} \oslash \log(2)\mathbf{p}) \odot \mathbf{p} \odot (\mathbf{1} - \mathbf{p})\\
- &=& -\frac{1}{\log(2)}(\mathbf{1} - \mathbf{p}).
+ &=& -\frac{1}{\log(2)}(\mathbf{t} - \mathbf{p}).
 \end{eqnarray}
 
 We can the design a similar quantity for each layer below the output layer. Taking derivatives, we have that, for each $i< \ell$,
@@ -104,13 +104,13 @@ Using these quantities, we can now find recursive definitions for derivatives wi
 \begin{eqnarray}
 \label{eq:gradients}
 \frac{\partial\Phi}{\partial W_i} &=& \xi^{(i+1)}(\mathbf{a}^{(i)})^T\\
-\frac{\partial\Phi}{\partial \mathbf{b}^{(i)}} &=& \xi^{(i+1)}.
+\frac{\partial\Phi}{\partial {b}^{(i)}} &=& \xi^{(i+1)}.
 \end{eqnarray}
 Notice that depending on whether or not we use a network for classification or regression, the only quantity that will change in this derivation is $\xi^{(\ell)}$ in equation \eqref{eq:finallayer}. Using equation \eqref{eq:gradients}, we can now write update rules for our optimization procedure. Note that for this derivation, we use pure online updates -- that is, we make adjustments to the gradient after each new labelled example. The basic update becomes then becomes
 \begin{equation}
 \theta \longleftarrow \theta - \gamma \Deriv{\Phi}{\theta},
 \end{equation}
-for each $\theta\in(W_i, \mathbf{b}_i)\in C$, and for some small, user-determined \emph{learning parameter} $\gamma$.
+for each $\theta\in(W_i, {b}_i)\in C$, and for some small, user-determined \emph{learning parameter} $\gamma$.
 
 \subsection{Gaining Momentum}
 
@@ -123,7 +123,7 @@ Formally, if we consider time steps $t$, we have that for a momentum parameter $
 \Delta\theta_{t} &=& (\mu - 1)\gamma\Deriv{\Phi}{\theta_t} + \mu\Delta\theta_{t - 1}\\
 \theta_{t+1} &=& \theta_t + \Delta\theta_{t},
 \end{eqnarray}
-for each $\theta\in(W_i, \mathbf{b}_i)\in C$ which dampens out fluctuations in changes to the gradient.
+for each $\theta\in(W_i, {b}_i)\in C$ which dampens out fluctuations in changes to the gradient.
 
 
 
@@ -133,13 +133,13 @@ for each $\theta\in(W_i, \mathbf{b}_i)\in C$ which dampens out fluctuations in c
 
 We now shift our attention to \ann{}s that serve as unsupervised learning algorithms. Using \ann{}s, we can learn a new representation of our original data in a new feature space. The process  consists of two steps -- an encoding step, and a decoding step. Such \ann{} is called an \emph{autencoder}. We learn a non-linear \emph{encoding} that can then be linearly \emph{decoded} to recover the original dataset. Obtaining a reliable non-linearly extracted lower dimensional representation is extremely valuable. Intuitively, we train our neural network to estimate an approximation of the identity function. We now provide a simple formulation of such an idea.
 
-Formally, consider the following. Consider our \emph{unlabelled} dataset$\{\mathbf{x}_i\}_{i=1}^n$, where we have that $\mathbf{x}_i\in\R^k$. Suppose we want to map each $\mathbf{x}_i$ to a new vector $\mathbf{y}\in\R^p$ with $p < k$. We wish to find two matrices -- $A\in\R^{p\times k}, B\in\R^{k\times p}$ -- and two vectors  $\mathbf{a}\in\R^p, \mathbf{b}\in\R^k$, that form good encoder-decoder pair as follows. For any $i$, the encoded features of $\mathbf{x}_i$ are represented by the vector 
+Formally, consider the following. Consider our \emph{unlabelled} dataset $\{\mathbf{x}_i\}_{i=1}^n$, where we have that $\mathbf{x}_i\in\R^k$. Suppose we want to map each $\mathbf{x}_i$ to a new vector $\mathbf{y}\in\R^p$ with $p < k$. We wish to find two matrices -- $A\in\R^{p\times k}, B\in\R^{k\times p}$ -- and two vectors  $\mathbf{a}\in\R^p, \mathbf{b}\in\R^k$, that form good encoder-decoder pair as follows. For any $i$, the encoded features of $\mathbf{x}_i$ are represented by the vector 
 \begin{equation}
-\mathbf{f}_i = s(A\mathbf{x}_i + a)
+\mathbf{f}_i = s(A\mathbf{x}_i + \mathbf{a})
 \end{equation} 
 which is clearly in $\R^p$. We now have that our reconstructed input is 
 \begin{equation}
-\tilde{\mathbf{x}}_i = B\mathbf{f}_i+b
+\tilde{\mathbf{x}}_i = B\mathbf{f}_i+\mathbf{b}
 \end{equation}
 
 To solve this problem, i.e., to have $\tilde{\mathbf{x}}_i$ be similar to $\mathbf{x}_i$, we formulate this as an optimization problem. Our problem now becomes
@@ -151,13 +151,13 @@ To solve this problem, i.e., to have $\tilde{\mathbf{x}}_i$ be similar to $\math
 Clearly, we cannot find an analytical solution to this problem -- however, we can use gradient descent to to find our encoder pair $(A,\mathbf{a})$ and decoder $(B, \mathbf{b})$. Similarly to Section \ref{basix}, we can derive gradients of Equation \eqref{encodeobj}. We can re-write Equation \eqref{encodeobj} as 
 
 \begin{equation}
-\min_{A,B,a,b} \rho(A,B,a,b)
+\min_{A,B,a,b} \rho(A,B,\mathbf{a},\mathbf{b})
 \end{equation}
 
 where 
 \begin{equation}
 \label{eqrho}
-\rho(A,B,a,b) = \frac{1}{2}\sumn{i} \Vert \mathbf{x}_i -  (B [s(A\mathbf{x}_i + a)]+b) \Vert ^ 2
+\rho(A,B,\mathbf{a},\mathbf{b}) = \frac{1}{2}\sumn{i} \Vert \mathbf{x}_i -  (B [s(A\mathbf{x}_i + \mathbf{a})]+\mathbf{b}) \Vert ^ 2
 \end{equation}
 
 By taking matrix derivatives, we then have that, for a given observation $\mathbf{x}_i$,
@@ -172,9 +172,10 @@ By taking matrix derivatives, we then have that, for a given observation $\mathb
 
 which allows us to use a gradient update step of
 \begin{equation}
+\label{eq:1layerupdate}
 \theta \longleftarrow \theta - \gamma \Deriv{\rho}{\theta}
 \end{equation}
-for each matrix $\theta\in\{A, B, a, b\}$ and some small learning rate $\gamma$.
+for each matrix $\theta\in\{A, B, \mathbf{a}, \mathbf{b}\}$ and some small learning rate $\gamma$.
 
 \subsection{Stacking and Robust Knowledge}
 The basic Autoencoder performs well, but can be improved upon. It is desirable to have such an encoder-decoder pair to be resistant to inherent noise in the training data. Thus, in practice, we perturb the inputs to the Autoencoder, and attempt to have the reconstruction reproduce a original, un-noisy version from the perturbed observation. Formally, for any vector $\textbf{x}\in\R^{k}$ we present, let $\delta\mathbf{x}\sim N(\mathbf{0}_k, \varepsilon^2 I)$, where $\mathbf{0}_k$ is the $k$ dimensional vector of zeros, and $\varepsilon$ is some adequately small scalar value. Now, our reconstructed vector of $\tilde{\mathbf{x}}$ of our input $\mathbf{x}$ will be 
@@ -186,14 +187,14 @@ The basic Autoencoder performs well, but can be improved upon. It is desirable t
 
 In this case the gradient update steps in \ref{grads_of_auto} do not change. We still find the gradient with respect to the error when compared to the unperturbed observation. This process, though though not provable, creates a resistance to noise, making the features learned by the autoencoder more resistant to noise. Thus, we refer to equation \eqref{denoising} as a Denoising Autoencoder. As new, previously unseen examples are presented, we assume that they have noise associated with them, and are presented as-is --i.e., no perturbation -- to the encoder. In addition to creating more robust features, such a procedure makes the risk of overtraining much lower.
 
-Take any trained denoising autoencoder with parameters $(A,B,a,b)$ that maps vectors $\mathbf{x}\in\R^k$ to features $\mathbf{f}\in\R^{p}$, with $p<k$. Define the function
+Take any trained denoising autoencoder with parameters $(A,B,\mathbf{a},\mathbf{b})$ that maps vectors $\mathbf{x}\in\R^k$ to features $\mathbf{f}\in\R^{p}$, with $p<k$. Define the function
 
 \begin{equation}
 \label{featuremapping}
-\mathcal{F}_{(A,a)}^{k\rightarrow p}(\mathbf{x}) = s(A(\mathbf{x}) + \mathbf{a})
+\mathcal{F}_{(A,\mathbf{a})}^{k\rightarrow p}(\mathbf{x}) = s(A(\mathbf{x}) + \mathbf{a})
 \end{equation}
 
-which is syntactical sugar around the encoding step, which involves the encoding pair $(A,a)$. Suppose we wished to develop more abstract features. Using equation \eqref{featuremapping}, we can develop a collection of increasing \emph{abstract} autoencoders -- that is, autoencoders that develop progressively more abstract representations of the dataset. 
+which is syntactical sugar around the encoding step, which involves the encoding pair $(A,\mathbf{a})$. Suppose we wished to develop more abstract features. Using equation \eqref{featuremapping}, we can develop a collection of increasing \emph{abstract} autoencoders -- that is, autoencoders that develop progressively more abstract representations of the dataset. 
 
 Formally, suppose we start from a dataset of dimension $p = d_0$, and we wish to map -- iteratively --  to each $\d_i\in\{d_i\}_{i=1}^{\ell}$, that is we map to $d_1$ dimensions, then to $d_2$ dimensions, et cetera. In addition, suppose we have a training set $\{\mathbf{x}_j\}_{j=1}^n$. For each $i\in\{1,\ldots,\ell\}$, let
 
@@ -201,21 +202,21 @@ Formally, suppose we start from a dataset of dimension $p = d_0$, and we wish to
 \begin{equation}
 \begin{aligned}
 \label{auto_soln}
-& (A_i,B_i,a_i,b_i) = \underset{(A,B,a,b)}{\text{argmin}}
-& & \frac{1}{2}\sumn{j} \Vert \mathbf{f}_j^{i-1} -  (B[s(A(\mathbf{f}_j^{i-1}+\delta\mathbf{f}_j^{i-1}) + a)]+b) \Vert ^ 2 \\
+& (A_i,B_i,\mathbf{a}_i,\mathbf{b}_i) = \underset{(A,B,a,b)}{\text{argmin}}
+& & \frac{1}{2}\sumn{j} \Vert \mathbf{f}_j^{i-1} -  (B[s(A(\mathbf{f}_j^{i-1}+\delta\mathbf{f}_j^{i-1}) + \mathbf{a})]+\mathbf{b}) \Vert ^ 2 \\
 & \text{subject to}
-& & A_i\in\R^{d_i\times d_{i-1}}, a_i\in\R^{d_{i-1}}, B_i\in\R^{d_{i-1}\times d_{i}}, a_i\in\R^{d_{i}} \\
+& & A_i\in\R^{d_i\times d_{i-1}}, \mathbf{a}_i\in\R^{d_{i-1}}, B_i\in\R^{d_{i-1}\times d_{i}}, \mathbf{b}_i\in\R^{d_{i}} \\
 & \text{where}
 & & \mathbf{f}^{i}_j = 
 	\begin{cases} 
-		\mathcal{F}_{(A_{i},a_{i})}^{d_{i-1}\rightarrow d_i}(\mathbf{f}_j^{i-1}), & \mbox{if } i>0\\ 
+		\mathcal{F}_{(A_{i},\mathbf{a}_{i})}^{d_{i-1}\rightarrow d_i}(\mathbf{f}_j^{i-1}), & \mbox{if } i>0\\ 
 		\mathbf{x}_j, & \mbox{otherwise}
 	\end{cases}
 \end{aligned}
 \end{equation}
 
 
-We now have that for each layer $i$, $(A_i,B_i,a_i,b_i)$ is a Denoising Autoencoder. Equation \eqref{auto_soln} provides us with a formalization of greedy, layer-wise training presented in \citep{Vincent:2010fk}. We can greedily start from the first layer, and then train each following layer on the features extracted from the previous layer.
+We now have that for each layer $i$, $(A_i,B_i,\mathbf{a}_i,\mathbf{b}_i)$ is a Denoising Autoencoder. Equation \eqref{auto_soln} provides us with a formalization of greedy, layer-wise training presented in \citep{Vincent:2010fk}. We can greedily start from the first layer, and then train each following layer on the features extracted from the previous layer. The $(A_i,B_i,\mathbf{a}_i,\mathbf{b}_i)$ groupings for each $i$ can be solved using simple gradient descent akin to the one layer case in equation \eqref{eq:1layerupdate}.
 
 
 
@@ -247,7 +248,7 @@ Once we learn the more abstract features using the stacked, deep architecture, w
 
 \section{Inverting the Problem}
 
-We now turn to the main algorithmic contribution of this thesis, Inverted Deep Network Encoding (IDNE). Once again a sequential process, this idea builds on the notion of fine-tuning, and uses fine tuning to create a better feature representation of the dataset encoded within the deep architecture. 
+We now turn to the main conceptual, non-experimental contribution of this thesis, Inverted Deep Network Encoding (IDNE). Once again a sequential process, this idea builds on the notion of fine-tuning, and uses fine tuning to create a better feature representation of the dataset encoded within the deep architecture. 
 
 We start by examining Equation \eqref{auto_soln}. Suppose we have a trained stacked denoising autoencoder  of $\ell$ layers that for a given input $\mathbf{x}$ produces $\mathbf{f}^\ell$, the most abstract feature representation. From Equation \eqref{auto_soln}, we have, for each $i\in\{1,\ldots,\ell\}$, a decoder pair $(B_i, \mathbf{b}_i)$ such that 
 \begin{equation}
@@ -261,7 +262,7 @@ We can use this relationship to build our input from the most abstract learned f
 \mathbf{x}\approx R( \mathbf{f}^{\ell})  = B_1 (B_2 (\cdots B_{\ell-1}(B_\ell \mathbf{f}^{\ell} + \mathbf{b}_\ell) + \mathbf{b}_{\ell - 1} \cdots ) + \mathbf{b}_2) + \mathbf{b}_1.
 \end{equation} 
 
-The key insight is that we now can use this information as an activation function for Inverted Deep Network Encoding. We can alter equation \eqref{feedforward} to predict the reconstructed input, i.e., we have that the prediction of the $\ell$ layered network is 
+The key insight is that we now can use this information as an additional layer for Inverted Deep Network Encoding. We can alter equation \eqref{feedforward} to predict the reconstructed input, i.e., we have that the prediction of the $\ell$ layered network is 
 \begin{eqnarray}
 \label{fd1}
 \mathbf{z}^{(i+1)} &=& A_{i+1} \mathbf{f}^{i} + \mathbf{a}_{i+1}\\
@@ -305,7 +306,15 @@ Using these quantities, we can now find recursive definitions for derivatives wi
 \end{eqnarray}
 
 
-Simply put, IDNE is a fine-tuning procedure with respect to the inputs. Using equation \eqref{eq:newgradients}, we can update the weights of the neural network to more accurately reconstruct the input. The user can define how much they want the final decoding layer to change over the course of optimization, allowing there to be rigidity in the decoding matrix. The level to which the use wants the final decoder to change is specified by the learning parameter. 
+Simply put, IDNE is a fine-tuning procedure with respect to the inputs. Using equation \eqref{eq:newgradients}, we can update the weights of the neural network to more accurately reconstruct the input. The user can define how much they want the final decoding layer to change over the course of optimization, allowing there to be rigidity in the decoding matrix. The level to which the use wants the final decoder to change is specified by the learning parameter.
+
+This begs the question -- what does this additional layer do? The layer mappings given by 
+\begin{eqnarray}
+A_{\ell+1} &=& \prod_{i=1}^{\ell} B_i \\ 
+\mathbf{a}_{\ell+1} &=& R(\overrightarrow{0})
+\end{eqnarray}
+
+map the most abstract feature level through all decoders, resulting in the primitive, generated representation of the input $\mathbf{x}$. Fine tuning with the original input as a target helps the individual autoencoders learn from each other, and allows more global feature structure to be learned.
 
 
 \section{Choosing What to Learn, or Learning what isn't there}
@@ -332,7 +341,7 @@ In addition to issues with Monte Carlo, we risk overfitting to specific $p_T$ an
 
 How do we ameliorate this problem? We introduce \emph{online physics reweighting}, which serves to even our the influence of these distributions we see. In essence, we re-weight individual jets order to \emph{flatten} the $p_T$ and $\eta$ distributions across jet type. 
 
-We do the following. Let $f(p_T,\eta \vert \theta)$ be the distribution over $p_T$ and $\eta$ with respect to a certain flavor theta, where $$\sum_\theta \iint\limits_{\R^2}f(p_T,\eta | \theta) = 1.$$ To create a reweighting, we use partitions over the supports of $p_T$ and $\eta$. 
+We do the following. Let $f(p_T,\eta \vert \theta)$ be the distribution over $p_T$ and $\eta$ with respect to a certain flavor $\theta$, where $$\sum_\theta \iint\limits_{\R^2}f(p_T,\eta | \theta) = 1.$$ To create a reweighting, we use partitions over the supports of $p_T$ and $\eta$. 
 
 Concretely suppose we want to re-weight a bottom jet that has $p_T$ between the partition values $m_1$ and $m_2$, and $\eta$ between the partition values $e_1$ and $e_2$. Then the weight of the jet with respect to a light majority -- $\omega_u(p_T, \eta, b)$ -- is 
 \begin{equation}
@@ -345,7 +354,7 @@ We do this process over each jet for a user-set partition on $p_T$ and $\eta$, o
 \Delta\upsilon_{t} &=& (\mu - 1)\gamma\omega_u(p_T, \eta, \theta)\Deriv{\Phi}{\upsilon_t}+ \mu\Delta\upsilon_{t - 1}\\
 \upsilon_{t+1} &=& \upsilon_t + \Delta\upsilon_{t},
 \end{eqnarray}
-for each $\upsilon\in(W_i, \mathbf{b}_i)\in C$ - the collection of weight matrices of our neural network. 
+for each $\upsilon\in(W_i, {b}_i)\in C$ - the collection of weight matrices of our neural network. 
 
 In addition to this weighting of the gradient, In addition, with a probability $p$. we also add a small amount of noise to the input during supervised training to add robustness. This, when coupled with the reweighting of samples, lets the model learn a sample that is reweighted to have identical $p_T$ and $\eta$ distributions across flavors. The level to which the distributions are the same is controlled by the user set fineness of the partitions of $p_T$ and $\eta$.
 

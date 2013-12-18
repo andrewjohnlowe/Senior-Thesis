@@ -6,7 +6,9 @@ GAIA was implemented with speed, portability, modularity, and expandability in m
 
 The GAIA framework was written in C++ using two standards for two separate parts. The main interface was written using C++11 standard. Specifically, the \texttt{<utility>} and \texttt{<memory>} headers were used for R-Value references and smart pointer (\texttt{std::unique\_{}ptr}) functionality, the \texttt{<random>} header was used for random number generation, and range-based for-loops were used, as the compiler used (GCC 4.8.X) optimized all iterations using this structure when the \texttt{-O3} flag is passed. The header-only thin-client library uses the C++0x standard to ensure compatibility with the existing CERN software.
 
-We provide a \texttt{Layer} class which encapsulated all operations relating to equations \eqref{net_prediction} and \eqref{auto_soln}, allowing for functionality with or without feature learning. Specifically, the \texttt{Layer} class holds $W_i$ and $\mathbf{b}_i$ The \texttt{Layer} class also is responsible for all parameter manipulation, and offers methods for setting parameters such as learning rate, etc. For a presented input $\mathbf{x}$, the \texttt{Layer} class offers a method called \texttt{Layer.feed(std::vector<double> x)} which forms and stores $\mathbf{z^{(i)}} = W_i \mathbf{x}+\mathbf{a}_i$ and $\mathbf{a}^{(i)}=f(\mathbf{z^{(i)}})$. Also noteworthy is the fact that the activation function $f$ is passed as a function pointer to the method within the constructor, making user-preference for a specific type of activation function more feasible.
+All trainings and testings of the GAIA framework were run on the Omega Supercomputing Cluster\footnote{Omega Cluster Platform 3000 BL460c G6, Xeon X5560 4C 2.80GHz, Infiniband QDR} at Yale University. A typical training time for a 7 layer Deep Network with full training on stacked, denoising autoencoders over 30 million samples was around 2 hours. 
+
+We provide a \texttt{Layer} class which encapsulated all operations relating to equations \eqref{net_prediction} and \eqref{auto_soln}, allowing for functionality with or without feature learning. Specifically, the \texttt{Layer} class holds $W_i$ and $\mathbf{b}_i$ The \texttt{Layer} class also is responsible for all parameter manipulation, and offers methods for setting parameters such as learning rate, etc. For a presented input $\mathbf{x}$, the \texttt{Layer} class offers a method called \texttt{Layer.feed(std::vector<double> x)} which forms and stores $\mathbf{z^{(i)}} = W_i \mathbf{x}+{b}_i$ and $\mathbf{a}^{(i)}=f(\mathbf{z^{(i)}})$. Also noteworthy is the fact that the activation function $f$ is passed as a function pointer to the method within the constructor, making user-preference for a specific type of activation function more feasible.
 
 We also provide an \texttt{Architecture} class, which provides a generic method of combining arbitrarily sized \texttt{Layer} objects into a network structure. It also handles all data passing between layers, and mediates the greedy feature learning within the neural network. Its main purpose is to provide the backpropagation function to the neural network. Build on top of the \texttt{Architecture} class is a \texttt{NeuralNet} class, which provides API sugar around many of the methods and provided functionality. The \texttt{NeuralNet} class also provides a mediatory layer between the user and the \texttt{Dataset} class, which serves as the wrapper around the native CERN \texttt{TTree} data structure. Thus, a user will only need to interact with the \texttt{NeuralNet} class from data loading to training to testing. We now walk through a simple example to illustrate the functionality of the API. Suppose we have a ROOT file named \texttt{dataset.root} containing a \texttt{TTree} called \texttt{MyTree}. Suppose we want to predict the outcome called \texttt{"output"} from the variables called \texttt{"var\_1"}, \texttt{"var\_2"}, and \texttt{"var\_3"}, and all of these variables are within the \texttt{TTree} called \texttt{MyTree}. Now suppose we want to build a neural network with one hidden layer, say with two nodes. The following code will do this. 
 
@@ -53,6 +55,8 @@ int main(int argc, char const *argv[])
 
 \end{verbatim}
 \end{small}
+
+
 
 As we can see, the interface is straight-forward, and additional functionality is elaborated upon in documentation. 
 
@@ -195,12 +199,14 @@ To examine this relationship, we perform a normalization procedure as follows. F
 \end{figure}
 the rejection performance of GAIA B and GAIA C are nearly identical and are certainly within statistical uncertainties. Interestingly enough, both versions of GAIA are clearly above MV1 for the entire $p_T$ spectrum, indicating superior performance for every \pt range of interest. 
 
+This indicates the possibility that different trainings of GAIA using different weighting are simply a way of implicitly making \pt dependent cuts. This warrants further investigation, as something such as a consistent way of reweighting posteriors using a $(p_T, \eta)$ polynomial would change the way reweighting is done within physics analyses.
+
 \subsection{Using IDNE}
 
 
 Using the Inverted Deep Network Encoding outlined in Chapter 3, we show performance improvements over GAIA B and GAIA C. As was evident in Figure \ref{fig:featGAIA}, GAIA with IDNE learned very informative features with respect to the structure of our dataset. This feature is not tested, and a thorough analysis of performance on a variety of problems is left as a future study. 
 
-In Figure \ref{fig:urejROCIDNE}, 
+
 
 \begin{figure}
 \includegraphics[width=\textwidth]{figures/btag/u_rej_ROC_IDNE.pdf}
@@ -208,41 +214,52 @@ In Figure \ref{fig:urejROCIDNE},
 \label{fig:urejROCIDNE}}
 \end{figure}
 
-we can clearly see that GAIA with IDNE is tentatively able to classify better than all other versions of GAIA, indicating a promising development. Figure \ref{fig:crejROCIDN} 
+In Figure \ref{fig:urejROCIDNE}, we can clearly see that GAIA with IDNE is tentatively able to classify better than all other versions of GAIA, indicating a promising development.  
 
 \begin{figure}
 \includegraphics[width=\textwidth]{figures/btag/c_rej_ROC_IDNE.pdf}
 \caption[The ATLAS detector]{$c$-rejection Receiver Operating Characteristic Curve of Tagging Lineup.
 \label{fig:crejROCIDNE}}
 \end{figure}
-affirms this performance increase, showing that both $u$ rejection and $c$ rejection for the $b$ tagging problem are improved when using the IDNE method of developing more informative features. 
-
-
-
-
-
-
+Figure \ref{fig:crejROCIDNE} affirms this performance increase, showing that both $u$ rejection and $c$ rejection for the $b$ tagging problem are improved when using the IDNE method of developing more informative features. 
 
 \section{$c$-tagging}
 
-\begin{figure}
-\includegraphics[width=\textwidth]{figures/btagging/phase_gaia_b_versus_jfcharm.pdf}
+Tagging $c$-jets is an entirely different problem than $b$-tagging. Depending on the target sample, a physicist will have to very carefully choose an operating point to maximize the rejection with respect to the sample-specific backgrounds. In particular, for a given signal efficiency, $\varepsilon_c$, a physicist will need to consider what point in rejection space is appropriate for the sample that will be used in a particular search. A natural way of condensing this information is considering signal efficiency as a surface over the space of possible background rejections for both types of background. To do this, we sample 1,000 values across the anti-$u$ discriminant and 1,000 values across the anti-$b$ discriminant, and determine the signal efficiency and both background rejections for all $1,000^2$ possible cuts on discriminant pairs. 
+
+This process yields a densely samples surface. In order to make the surface well defined, we take a 2D cumulative maximum of $\varepsilon_c$ across rejection space starting at the highest rejection-rejection pair. If we plot this as a heat-map, we can divide two such graphics from different taggers, yielding a ratio of tagger efficiencies for each point in rejection space. 
+
+Consider Figure \ref{fig:gbjfcphase}, which shows such a graphic for GAIA B against the current ATLAS standard for $c$-tagging, JetFitterCharm. We also see iso-$\varepsilon_c$ contours from GAIA B, showing the level curves from the original signal efficiency surface. The colors in rejection space represent the ratio of GAIA B signal efficiency to that of JetFitterCombNN. We cap the ratio at a 20\% improvement to better show regions of improvement. 
+
+\begin{figure}[h!]
+\includegraphics[width=0.9\textwidth]{figures/btagging/phase_gaia_b_versus_jfcharm.pdf}
 \caption[The ATLAS detector]{Iso-$\varepsilon$ plot of GAIA B versus JetFitterCharm.
 \label{fig:gbjfcphase}}
 \end{figure}
 
-\begin{figure}
-\includegraphics[width=\textwidth]{figures/btagging/phase_gaia_c_versus_jfcharm.pdf}
+In Figure \ref{fig:gcjfcphase}, we see the rejection-space $c$-tagging efficiency improvements of GAIA C with respect to JetFitterCharm. As is the case in Figure \ref{fig:gbjfcphase}, we see that the the GAIA framework provides a better signal efficiency than JetFitterCharm for every possible rejection pairing. 
+
+\begin{figure}[h!]
+\includegraphics[width=0.9\textwidth]{figures/btagging/phase_gaia_c_versus_jfcharm.pdf}
 \caption[The ATLAS detector]{Iso-$\varepsilon$ plot of GAIA C versus JetFitterCharm.
 \label{fig:gcjfcphase}}
 \end{figure}
 
-Text here
-\begin{figure}
-\includegraphics[width=\textwidth]{figures/btagging/phase_gaia_b_versus_gaia_c.pdf}
+
+GAIA B was optimized for $b$ jets, and GAIA C was a more general purpose tuning. How do these tunings compare to each other? Figure \ref{fig:gbgcphase} shows us that they perform very similarly -- they are within 6\% of each other for every rejection pairing. It seems, however, that GAIA B performs very well when the desired $\varepsilon_c$ is higher, which makes sense. Since GAIA B was trained to identify $b$ jets, and since most $c$ jets are $b$-like, GAIA B is better at identifying the harder cases. Conversely, since GAIA C is more general purpose, it is better at identifying when a jet is clearly a $c$ jet. 
+
+\begin{figure}[h!]
+\includegraphics[width=0.9\textwidth]{figures/btagging/phase_gaia_b_versus_gaia_c.pdf}
 \caption[The ATLAS detector]{Iso-$\varepsilon$ plot of GAIA B versus GAIA C.
 \label{fig:gbgcphase}}
 \end{figure}
+
+Both tunings yield interesting results, and clearly warrant further study. In particular, we wish to consider polynomial reweightings of the posterior probability distributions according to kinematic distributions, and whether GAIA with Inverted Deep Network Encoding can offer increases in $c$-tagging performance. 
+
+
+
+
+
 
 
 
