@@ -70,27 +70,22 @@ Training an \ann{} is done most frequently by so-called \emph{backpropagation}. 
 
 We can break backpropagation into two parts --  the \emph{feed-forward step} step and \emph{backpropagation of errors}. Essentially, we use the structure of the neural network to define a gradient of cost function associated with the prediction errors that the network produces. 
 
-More formally, suppose we have a collection of data points (column vectors) $\{\mathbf{x}_i\}_{i=1}^n$, where we have that $\mathbf{x}_i\in\R^k$. We can now define our objective function in a more concrete fashion than equation \eqref{prob_formulation}. We here consider the case of multi-class classification -- an instance in which the literature suggests the use of a $\log_2$ cross-entropy function. The derivation of gradients with respect to other error functions follows a similar form, and is omitted here for the sake of brevity. For an individual observation $\mathbf{x}\in\R^k$, a neural network $\mathcal{N}$, the predicted posteriors $\mathbf{p} = \smax(\boxtimes_{C}^{s}(\mathbf{x}))$, and a target vector of one-versus-all class encoding $\mathbf{t}\in\R^p$, we have an error of 
+More formally, suppose we have a collection of data points (column vectors) $\{\mathbf{x}_i\}_{i=1}^n$, where we have that $\mathbf{x}_i\in\R^k$. We can now define our objective function in a more concrete fashion than equation \eqref{prob_formulation}. We here consider the case of multi-class classification -- an instance in which the literature suggests the use of a $\log_2$ cross-entropy function. We also assume that the posterior probabilities are produced by the softmax function and that we use the standard sigmoid function, as defined in Chapter 1. The derivation of gradients with respect to other error functions follows a similar form, but is omitted here for the sake of brevity. For an individual observation $\mathbf{x}\in\R^k$, a neural network $\mathcal{N}$, the predicted posteriors $\mathbf{p} = \smax(\boxtimes_{C}^{s}(\mathbf{x}))$, and a target vector of one-versus-all class encoding $\mathbf{t}\in\R^p$, we have an error of 
 \begin{equation}
 \Phi(\mathbf{x}, \mathbf{t}, \mathcal{N}) = -\text{sum}(\log_2(\mathbf{p}) \odot \mathbf{t}).
 \end{equation}
 
-To correct the errors our model produces with the posterior vector $\mathbf{p}$, we take a derivative of $\Phi$ with respect to $\mathbf{p}$. We have that 
-\begin{equation}
-\label{eq:ce_error}
-\frac{\partial\Phi}{\partial\mathbf{p}} = -\mathbf{t} \oslash \log(2)\mathbf{p}
-\end{equation}
+Notice above that only one element of $\mathbf{t}$, call it $t_i$, will be equal to one, and the rest will be zero, since we use one-versus-all class encoding. Now, notice that if the $p_i$ corresponding to $t_i$ is small, then the value of the cross entropy error will blow up, correcting the mistake that the model made to a much higher degree than a standard Sum of Squared Errors. 
 
-Notice above that only one element of $\mathbf{t}$, call it $t_i$, will be equal to one, and the rest will be zero, since we use one-versus-all class encoding. Now, notice that if the $p_i$ corresponding to $t_i$ is small, then that element of the gradient will blow up, correcting the mistake that the model made. 
-
-We proceed layer by layer. The prediction can be written as $\mathbf{p} = g(\mathbf{z}^{(\ell-1)})$. For the final layer $\ell$ of the network, define
+To correct for such an error, we proceed layer by layer. The prediction can be written as $\mathbf{p} = g(\mathbf{z}^{(\ell-1)})$. For the final layer $\ell$ of the network, define
 
 \begin{eqnarray}
 \label{eq:finallayer}
-\xi^{(\ell)} &=& -(\mathbf{t} \oslash \log(2)\mathbf{p}) \odot g'(\mathbf{z}^{(\ell-1)})\\
- &=& - (\mathbf{t} \oslash \log(2) \mathbf{p}) \odot g(\mathbf{z}^{(\ell-1)}) \odot (\mathbf{1} - g(\mathbf{z}^{(\ell-1)}))\\
- &=& -(\mathbf{t} \oslash \log(2)\mathbf{p}) \odot \mathbf{p} \odot (\mathbf{1} - \mathbf{p})\\
- &=& -\frac{1}{\log(2)}(\mathbf{t} - \mathbf{p}).
+\xi^{(\ell)}&=&-\frac{1}{\log(2)}\frac{\partial}{\partial \mathbf{z}}(\mathbf{t}\odot\log(\mathbf{p}))\\
+&=&-\frac{1}{\log(2)}\frac{\partial}{\partial \mathbf{z}}(\mathbf{t}\odot\log(e^{\mathbf{z}}\oslash \text{sum}(\mathbf{z})))\\
+&=&-\frac{1}{\log(2)}\frac{\partial}{\partial \mathbf{z}}(\mathbf{t}\odot\mathbf{z}- \log(\mathbf{1}\odot\text{sum}(e^{\mathbf{z}})))\\
+ &=&-\frac{1}{\log(2)}(\mathbf{t} - e^{\mathbf{z}}\oslash\text{sum}(e^{\mathbf{z}})) \\ 
+ &=&-\frac{1}{\log(2)}(\mathbf{t} - \mathbf{p}).
 \end{eqnarray}
 
 We can the design a similar quantity for each layer below the output layer. Taking derivatives, we have that, for each $i< \ell$,
@@ -264,7 +259,7 @@ We can use this relationship to build our input from the most abstract learned f
 
 The key insight is that we now can use this information as an additional layer for Inverted Deep Network Encoding. We can alter equation \eqref{feedforward} to predict the reconstructed input, i.e., we have that the prediction of the $\ell$ layered network is 
 \begin{eqnarray}
-\label{fd1}
+\label{feedingforward}
 \mathbf{z}^{(i+1)} &=& A_{i+1} \mathbf{f}^{i} + \mathbf{a}_{i+1}\\
 \mathbf{f}^{i+1} &=& s(\mathbf{z}^{(i+1)}),
 \end{eqnarray}
@@ -283,7 +278,7 @@ where $\overrightarrow{0}$ is the zero vector. The final prediction of the netwo
 \tilde{\mathbf{x}} = A_{\ell +1}\mathbf{f}^\ell + \mathbf{a}_{\ell+1}.
 \end{equation}
 
-We can use backpropagation to tune the $(A_i, \mathbf{a}_i)$ pairs which become the $(W_i, \mathbf{b}_i)$ pairs to initialize in the network. To perform IDNE, we first must train stacked, denoising autoencoders, and then we use Equations \eqref{fd1}, \eqref{fd2}, and \eqref{backproprule} to write the update rules for the $(A_i, \mathbf{a}_i)$ pairs. We minimize a cost that is a sum of squares, i.e., $\Phi = \frac{1}{2}\Vert \mathbf{x} - \tilde{\mathbf{x}} \Vert ^2 $.
+We can use backpropagation to tune the $(A_i, \mathbf{a}_i)$ pairs which become the $(W_i, \mathbf{b}_i)$ pairs to initialize in the network. To perform IDNE, we first must train stacked, denoising autoencoders, and then we use Equations \eqref{feedingforward} and \eqref{fd2} to write the update rules for the $(A_i, \mathbf{a}_i)$ pairs. We minimize a cost that is a sum of squares, i.e., $\Phi = \frac{1}{2}\Vert \mathbf{x} - \tilde{\mathbf{x}} \Vert ^2 $.
 
 For the last layer, define
 \begin{equation}
